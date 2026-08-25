@@ -16,7 +16,7 @@ export type {
 } from './client-factory';
 export * from './types/client-factory';
 export * from './errors/client-factory';
-export { ComplianceModule } from './compliance';
+export { ComplianceModule, isComplianceCacheEntryFresh } from './compliance';
 export { AssetModule } from './asset';
 export { InvestorModule } from './investor/portfolio';
 export { RoleModule } from './role';
@@ -50,6 +50,7 @@ export * from './types/admin-receipt';
 export * from './errors/network';
 export * from './errors/config';
 export * from './types/contract-event';
+export * from './types/compliance-cache';
 export * from './errors/event';
 export type { AegisEnvironmentName, AegisEnvironmentPreset } from './config/environments';
 export type { ResolvedAegisConfig } from './config/validate';

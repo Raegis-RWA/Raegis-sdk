@@ -29,6 +29,11 @@ Either `environment` or both `rpcUrl` and `networkPassphrase` must be provided. 
 
 Whitelist / KYC verification module. Accessed via `client.compliance`. Wraps the contract's `is_whitelisted` read-only function.
 
+The module does not cache reads. Dashboard consumers that opt into caching
+should follow the [Compliance Status Cache Strategy](./compliance-status-cache.md)
+and use the exported `ComplianceCacheScope`, `ComplianceStatusCacheEntry`,
+`ComplianceStatusCacheAdapter`, and `isComplianceCacheEntryFresh()` helper.
+
 ### `checkWhitelist(address: string): Promise<boolean>`
 
 Queries the contract to check if a user is KYC-approved (whitelisted).
@@ -69,6 +74,39 @@ try {
 ```
 
 > **Open note:** `checkWhitelist` passes the raw invocation object returned by `contract.call(...)` directly as the `transaction` field to `simulateTransaction` (cast through `as any`), rather than assembling a full `Transaction` via `TransactionBuilder` the way `AssetModule.mint`/`transfer` do. The source itself flags this with a comment ("Cast required depending on SDK version wrapper"), so the exact request shape expected by `simulateTransaction` across `@stellar/stellar-sdk` versions is not fully confirmed — verify against the installed SDK version rather than assuming it's stable.
+
+### `isComplianceCacheEntryFresh(entry, expectedScope, now?): boolean`
+
+Checks whether an explicitly consumer-managed cache entry is reusable. It does
+not create, read, update, or invalidate a cache.
+
+**Parameters**
+
+- `entry` (`ComplianceStatusCacheEntry`): The candidate status, its exact
+  network/contract/address scope, and Unix-millisecond `checkedAt`/`expiresAt`.
+- `expectedScope` (`ComplianceCacheScope`): The network, contract, and address
+  required by the current read.
+- `now` (`number`, optional): Unix epoch milliseconds used for the freshness
+  check. Defaults to `Date.now()`.
+
+**Returns**
+
+`true` only when all scope fields match, timestamps are finite, `checkedAt` is
+not in the future, and `expiresAt` is strictly later than `now`. Returns `false`
+at the expiry boundary and for invalid timestamps or a missing persisted scope.
+
+### Compliance cache types
+
+- `ComplianceCacheScope` requires `networkPassphrase`, `contractId`, and
+  `address` to prevent cross-network, cross-deployment, or cross-account reuse.
+- `ComplianceStatusCacheEntry` contains the scope, `isWhitelisted`, `checkedAt`,
+  and `expiresAt`.
+- `ComplianceStatusCacheAdapter` defines optional `get`, `set`, and `invalidate`
+  operations. The SDK never creates or calls an adapter automatically.
+
+See the [Compliance Status Cache Strategy](./compliance-status-cache.md) before
+using these types. A fresh entry remains a snapshot and is not a transaction
+authorization decision.
 
 ---
 
