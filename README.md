@@ -61,6 +61,11 @@ See [Role-Aware Client Factory](./docs/role-aware-client-factory.md) for the
 full capability matrix, `compliance-operator` usage, error handling, and
 security notes.
 
+Dashboard consumers that need to reduce repeated whitelist reads should follow
+the [Compliance Status Cache Strategy](./docs/compliance-status-cache.md). The
+SDK does not cache compliance state automatically; the guide defines explicit
+freshness, invalidation, and stale-data boundaries.
+
 For direct `AegisClient` construction (advanced / custom setups):
 
 ```typescript
@@ -149,4 +154,3 @@ PRs submitted to this repository are reviewed against our [Pull Request Reviewer
 
 ### Acceptance Criteria Traceability
 Every PR **must** include an [acceptance criteria traceability table](docs/acceptance-criteria-traceability.md) that maps SDK modules, tests, docs, and behaviour verification to each acceptance criterion from the linked issue. This makes evaluation straightforward for maintainers and GrantFox reviewers.
-

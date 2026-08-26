@@ -1,11 +1,47 @@
 import { Contract, nativeToScVal, rpc } from '@stellar/stellar-sdk';
 import { AegisClient } from './client';
+import type {
+  ComplianceCacheScope,
+  ComplianceStatusCacheEntry,
+} from './types/compliance-cache';
 import { parseSorobanResult } from './utils/xdr-parser';
 
-export class ComplianceModule {
-private client: AegisClient;
+/**
+ * Returns whether a consumer-managed compliance cache entry is safe to reuse.
+ *
+ * Freshness requires an exact network/contract/address match, valid timestamps,
+ * and an expiry strictly later than `now`. This helper never reads from or
+ * writes to a cache; consumers remain responsible for explicit invalidation.
+ */
+export function isComplianceCacheEntryFresh(
+  entry: Readonly<ComplianceStatusCacheEntry>,
+  expectedScope: Readonly<ComplianceCacheScope>,
+  now: number = Date.now(),
+): boolean {
+  if (!entry.scope) {
+    return false;
+  }
 
-constructor(client: AegisClient) {
+  const timestampsAreValid =
+    Number.isFinite(now) &&
+    Number.isFinite(entry.checkedAt) &&
+    Number.isFinite(entry.expiresAt) &&
+    entry.checkedAt <= now &&
+    entry.expiresAt > now &&
+    entry.expiresAt >= entry.checkedAt;
+
+  return (
+    timestampsAreValid &&
+    entry.scope.networkPassphrase === expectedScope.networkPassphrase &&
+    entry.scope.contractId === expectedScope.contractId &&
+    entry.scope.address === expectedScope.address
+  );
+}
+
+export class ComplianceModule {
+  private client: AegisClient;
+
+  constructor(client: AegisClient) {
     this.client = client;
   }
 
@@ -30,7 +66,7 @@ constructor(client: AegisClient) {
     // rpc.Api.isSimulationSuccess acts as a type guard here
     // Check for success AND ensure the result object actually exists
     if (rpc.Api.isSimulationSuccess(result) && result.result) {
-       return parseSorobanResult(result.result.retval as any) as boolean;
+      return parseSorobanResult(result.result.retval as any) as boolean;
     }
     return false;
   }
