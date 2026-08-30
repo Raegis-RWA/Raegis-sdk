@@ -112,6 +112,29 @@ describe('Contract event decoder', () => {
     });
   });
 
+  describe('role events', () => {
+    it('decodes role grant and revoke events', () => {
+      const grant = decodeContractEvent(contractEventFixtures.roleGrant());
+      const revoke = decodeContractEvent(contractEventFixtures.roleRevoke());
+
+      expect(grant).toMatchObject({
+        kind: 'role',
+        action: 'role_grant',
+        address: contractEventFixtures.addresses.investor,
+        role: 'issuer',
+        admin: contractEventFixtures.addresses.admin,
+      });
+
+      expect(revoke).toMatchObject({
+        kind: 'role',
+        action: 'role_revoke',
+        address: contractEventFixtures.addresses.investor,
+        role: 'issuer',
+        admin: contractEventFixtures.addresses.admin,
+      });
+    });
+  });
+
   describe('unknown fallback', () => {
     it('returns unknown events for unsupported topics', () => {
       const decoded = decodeContractEvent(contractEventFixtures.unknownTopic());

@@ -105,6 +105,16 @@ export const contractEventFixtures = {
         is_rwa: true,
       })
     ),
+  roleGrant: (): ContractEventInput =>
+    baseEvent(
+      [symbolTopic('role_grant'), addressTopic(INVESTOR_ADDRESS), symbolTopic('issuer')],
+      encodeValue({ admin: ADMIN_ADDRESS })
+    ),
+  roleRevoke: (): ContractEventInput =>
+    baseEvent(
+      [symbolTopic('role_revoke'), addressTopic(INVESTOR_ADDRESS), symbolTopic('issuer')],
+      encodeValue({ admin: ADMIN_ADDRESS })
+    ),
   unknownTopic: (): ContractEventInput =>
     baseEvent(
       [symbolTopic('future_protocol_upgrade')],
