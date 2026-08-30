@@ -19,6 +19,7 @@ import {
   MintContractEvent,
   TransferContractEvent,
   UnknownContractEvent,
+  RoleContractEvent,
 } from '../types/contract-event';
 
 /**
@@ -89,6 +90,10 @@ export function decodeContractEvent(
       return decodeAdminEvent(envelope, 'asset_register', decodedTopics, decodedValue, options);
     case AEGIS_EVENT_TOPICS.ASSET_METADATA:
       return decodeAssetMetadataEvent(envelope, decodedTopics, decodedValue, options);
+    case AEGIS_EVENT_TOPICS.ROLE_GRANT:
+      return decodeRoleEvent(envelope, 'role_grant', decodedTopics, decodedValue, options);
+    case AEGIS_EVENT_TOPICS.ROLE_REVOKE:
+      return decodeRoleEvent(envelope, 'role_revoke', decodedTopics, decodedValue, options);
     default:
       if (options.strict) {
         throw new EventDecodeError(
@@ -368,6 +373,49 @@ function decodeAssetMetadataEvent(
     decimals,
     ...(typeof category === 'string' ? { category } : {}),
     ...(typeof isRwa === 'boolean' ? { isRwa } : {}),
+  };
+}
+
+function decodeRoleEvent(
+  envelope: ContractEventEnvelope,
+  action: RoleContractEvent['action'],
+  topics: unknown[],
+  value: unknown,
+  options: DecodeContractEventOptions
+): RoleContractEvent | UnknownContractEvent {
+  const address =
+    normalizeAddress(topics[1]) ??
+    normalizeAddress(topics[2]) ??
+    normalizeAddress(readPayloadField(value, 'address')) ??
+    normalizeAddress(readPayloadField(value, 'account'));
+
+  let role = readPayloadField(value, 'role') as string | undefined;
+  if (!role) {
+    const t1 = decodeTopicIdentifier(topics[1]);
+    const t2 = decodeTopicIdentifier(topics[2]);
+    if (t1 && t1 !== address) role = t1;
+    else if (t2 && t2 !== address) role = t2;
+  }
+
+  if (!address || !role) {
+    return failOrUnknown(
+      envelope,
+      topics,
+      value,
+      options,
+      'Role event is missing address or role.'
+    );
+  }
+
+  const admin = normalizeAddress(readPayloadField(value, 'admin')) ?? undefined;
+
+  return {
+    ...envelope,
+    kind: 'role',
+    action,
+    role,
+    address,
+    ...(admin ? { admin } : {}),
   };
 }
 

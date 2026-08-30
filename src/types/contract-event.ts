@@ -9,6 +9,7 @@ export type ContractEventKind =
   | 'transfer'
   | 'admin'
   | 'asset_metadata'
+  | 'role'
   | 'unknown';
 
 export interface ContractEventEnvelope {
@@ -67,12 +68,21 @@ export interface UnknownContractEvent extends ContractEventEnvelope {
   reason?: string;
 }
 
+export interface RoleContractEvent extends ContractEventEnvelope {
+  kind: 'role';
+  action: 'role_grant' | 'role_revoke';
+  role: string;
+  address: string;
+  admin?: string;
+}
+
 export type AegisContractEvent =
   | ComplianceContractEvent
   | MintContractEvent
   | TransferContractEvent
   | AdminContractEvent
   | AssetMetadataContractEvent
+  | RoleContractEvent
   | UnknownContractEvent;
 
 /**

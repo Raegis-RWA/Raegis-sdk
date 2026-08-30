@@ -15,6 +15,8 @@ export const AEGIS_EVENT_TOPICS = {
   PROTOCOL_UNPAUSE: 'protocol_unpause',
   ASSET_REGISTER: 'asset_register',
   ASSET_METADATA: 'asset_metadata',
+  ROLE_GRANT: 'role_grant',
+  ROLE_REVOKE: 'role_revoke',
 } as const;
 
 export type AegisEventTopicName =
@@ -38,6 +40,10 @@ const EVENT_NAME_ALIASES: Readonly<Record<string, AegisEventTopicName>> = {
   register_asset: AEGIS_EVENT_TOPICS.ASSET_REGISTER,
   asset_metadata: AEGIS_EVENT_TOPICS.ASSET_METADATA,
   metadata_update: AEGIS_EVENT_TOPICS.ASSET_METADATA,
+  role_grant: AEGIS_EVENT_TOPICS.ROLE_GRANT,
+  grant_role: AEGIS_EVENT_TOPICS.ROLE_GRANT,
+  role_revoke: AEGIS_EVENT_TOPICS.ROLE_REVOKE,
+  revoke_role: AEGIS_EVENT_TOPICS.ROLE_REVOKE,
 };
 
 /**
