@@ -104,6 +104,24 @@ if (event.kind === 'transfer') {
 
 See [Contract Event Decoder](./docs/contract-events.md) for supported topics, unknown fallback behaviour, and dashboard integration guidance.
 
+## Transaction Result Reconciliation
+Turn a submitted transaction into a typed outcome instead of guessing from raw RPC statuses.
+
+```typescript
+const txHash = await aegis.asset.transfer('G_RECIPIENT_PUBLIC_KEY', 500);
+const result = await aegis.transaction.waitForResult(txHash);
+
+console.log(result.status); // 'confirmed' | 'failed' | 'pending' | 'rejected' | 'unknown'
+
+if (!result.terminal) {
+  // Outcome is still open — reconcile the same hash later. Never resubmit blindly.
+}
+```
+
+Polling only reads status; it never resubmits. `pending` and `unknown` are not proof
+of failure. See [Transaction Result Reconciliation](./docs/transaction-reconciliation.md)
+for the full status model and retry caution.
+
 ## Testing
 To run the SDK unit tests locally:
 

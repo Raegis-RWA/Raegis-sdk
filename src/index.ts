@@ -21,6 +21,14 @@ export { AssetModule } from './asset';
 export { InvestorModule } from './investor/portfolio';
 export { RoleModule } from './role';
 export { EventsModule } from './events/module';
+export { TransactionModule } from './transactions/module';
+export {
+  normalizeTransactionHash,
+  normalizeTransactionResultStatus,
+  reconcileGetTransactionResponse,
+  reconcileSendTransactionResponse,
+  reconcileTransactionStatus,
+} from './transactions/reconciliation';
 export { decodeContractEvent, decodeContractEvents } from './events/decoder';
 export {
   AEGIS_EVENT_TOPICS,
@@ -28,6 +36,7 @@ export {
   normalizeEventTopicName,
 } from './events/topics';
 export { decodeScVal, decodeEventName } from './soroban/scval';
+export { decodeTransactionResultCode } from './soroban/transaction-result';
 export { parseSorobanResult } from './utils/xdr-parser';
 export {
   buildAdminActionReceipt,
@@ -51,5 +60,7 @@ export * from './errors/network';
 export * from './errors/config';
 export * from './types/contract-event';
 export * from './errors/event';
+export * from './types/transaction-result';
+export * from './errors/transaction';
 export type { AegisEnvironmentName, AegisEnvironmentPreset } from './config/environments';
 export type { ResolvedAegisConfig } from './config/validate';

@@ -22,6 +22,7 @@ Either `environment` or both `rpcUrl` and `networkPassphrase` must be provided. 
 * `client.investor`: Investor portfolio read model module (`InvestorModule`). See [Investor Portfolio Documentation](./investor-portfolio.md).
 * `client.role`: Role discovery & capability checks module (`RoleModule`). See [Role Discovery & Capability Checks Documentation](./role-discovery.md).
 * `client.events`: Contract event fetch/decode module (`EventsModule`). See [Contract Event Decoder Documentation](./contract-events.md).
+* `client.transaction`: Transaction result reconciliation module (`TransactionModule`). See [Transaction Result Reconciliation](./transaction-reconciliation.md).
 
 ---
 
@@ -189,6 +190,121 @@ Typed Soroban contract event decoding for audit trails. See [Contract Event Deco
 * `decodeContractEvent(input, options?)` — pure decoder with `unknown` fallback by default.
 * `decodeContractEvents(inputs, options?)` — batch decode preserving order.
 * `normalizeEventTopicName(name)` / `isKnownAegisEventTopic(name)` — topic compatibility helpers.
+
+## `TransactionModule` & result reconciliation
+
+Reconciles submitted Soroban transactions into typed outcomes. Accessed via
+`client.transaction`. See [Transaction Result Reconciliation](./transaction-reconciliation.md)
+for the status model and retry caution.
+
+This module only reads transaction state. No method signs, submits, or
+resubmits a transaction.
+
+### `reconcile(input: ReconcileTransactionStatusInput): TransactionResult`
+
+Reconciles a known hash and status without contacting RPC.
+
+**Parameters**
+* `input.hash` (string): 64-character hex transaction hash. Trimmed and lowercased.
+* `input.status` (string): raw RPC status (`SUCCESS`, `FAILED`, `NOT_FOUND`, `PENDING`, `DUPLICATE`, `TRY_AGAIN_LATER`, `ERROR`, or any other string).
+* `input.ledger` / `input.latestLedger` (number, optional): ledger metadata to carry into the result.
+* `input.attempts` (number, optional): observation count. Defaults to `1`.
+* `input.failureCode` (string, optional): pre-extracted failure code. Values that do not match `^[A-Z0-9][A-Z0-9_.:-]{0,63}$` are dropped.
+* `input.observedAt` (`Date | string`, optional): observation timestamp. Defaults to now.
+* `input.observationWindowExpired` (boolean, optional): converts a `pending` reading into `unknown` with code `OBSERVATION_WINDOW_EXPIRED`. Terminal statuses are unaffected.
+
+**Returns**
+A frozen `TransactionResult` discriminated on `status` (`confirmed` | `failed` | `pending` | `rejected` | `unknown`). Unrecognised statuses return `unknown` with code `UNRECOGNIZED_STATUS` rather than throwing.
+
+**Errors**
+Throws `TransactionReconciliationError` with code `INVALID_TRANSACTION_HASH` (hash is not 64 hex characters), `INVALID_STATUS` (status is not a non-empty string), `INVALID_POLL_OPTIONS` (`attempts` is not a positive integer), or `INVALID_TIMESTAMP` (`observedAt` is not a valid date).
+
+### `reconcileSubmission(response, options?): TransactionResult`
+
+**Signature**
+```typescript
+public reconcileSubmission(
+  response: rpc.Api.SendTransactionResponse,
+  options?: ReconcileTransactionResponseOptions,
+): TransactionResult
+```
+
+Maps a `sendTransaction` response. `PENDING` and `DUPLICATE` are `pending`,
+`ERROR` is `rejected`, `TRY_AGAIN_LATER` is `unknown`. When `errorResult` is
+present, `failureCode` is set from the transaction result switch name only —
+raw XDR is not copied. Same throw paths as `reconcile`.
+
+### `getResult(hash: string): Promise<TransactionResult>`
+
+Performs one `getTransaction` read. Returns `pending` for `NOT_FOUND`, which
+means "not observed yet", not "failed".
+
+**Errors**
+Throws `TransactionReconciliationError` (`INVALID_TRANSACTION_HASH`) before any
+RPC call, or `NetworkFailure` if the RPC read fails — the call goes through
+`client.runNetworkOperation`.
+
+### `waitForResult(hash, options?): Promise<TransactionResult>`
+
+**Signature**
+```typescript
+public async waitForResult(
+  hash: string,
+  options?: WaitForTransactionOptions,
+): Promise<TransactionResult>
+```
+
+**Parameters**
+* `options.maxAttempts` (number): maximum `getTransaction` reads. Defaults to `10`.
+* `options.intervalMs` (number): delay before the second read. Defaults to `1000`.
+* `options.backoffFactor` (number): delay multiplier after each read. Defaults to `1.5`.
+* `options.maxIntervalMs` (number): delay ceiling. Defaults to `8000`.
+* `options.sleep` (`(ms: number) => Promise<void>`): injectable delay for deterministic tests. Defaults to `setTimeout`.
+
+**Returns**
+The first terminal result (`confirmed`, `failed`, or `rejected`). If the window
+ends without inclusion, returns `unknown` with code
+`OBSERVATION_WINDOW_EXPIRED` and `attempts` set to the number of reads made —
+not an error and not a failure.
+
+**Errors**
+Throws `TransactionReconciliationError` with `INVALID_TRANSACTION_HASH`, or
+`INVALID_POLL_OPTIONS` when `maxAttempts` is not a positive integer,
+`intervalMs` is negative, `backoffFactor` is below `1`, or `maxIntervalMs` is
+below `intervalMs`. Validation happens before any RPC call. RPC failures surface
+as `NetworkFailure`.
+
+### Standalone helpers
+
+* `reconcileTransactionStatus(input)` — pure reconciler behind `client.transaction.reconcile`.
+* `reconcileSendTransactionResponse(response, options?)` — pure submission reconciler.
+* `reconcileGetTransactionResponse(hash, response, options?)` — pure `getTransaction` reconciler.
+* `normalizeTransactionResultStatus(status)` — maps a raw RPC status string to a `TransactionResultStatus`; unrecognised values return `unknown`.
+* `normalizeTransactionHash(hash)` — validates and lowercases a transaction hash; throws `TransactionReconciliationError`.
+* `decodeTransactionResultCode(result)` — reads a transaction result's switch name as a stable uppercase code (`txFailed` becomes `TX_FAILED`). Returns `undefined` when the input is absent or unreadable; never throws.
+
+**Example**
+```typescript
+const submitted = client.transaction.reconcileSubmission(sendResponse);
+
+if (submitted.status === 'rejected') {
+  throw new Error(`Rejected before inclusion: ${submitted.failureCode}`);
+}
+
+const result = await client.transaction.waitForResult(submitted.hash);
+
+if (!result.terminal) {
+  console.log('Still indeterminate — reconcile the same hash later, do not resubmit.');
+}
+```
+
+> **Open note:** `AssetModule.mint` and `AssetModule.transfer` still return a
+> bare hash string and do not inspect the submission status, so an `ERROR` or
+> `TRY_AGAIN_LATER` submission currently looks the same as an accepted one.
+> Pass the returned hash to `client.transaction.waitForResult` (or reconcile the
+> raw `sendTransaction` response yourself) to learn the actual outcome.
+
+---
 
 ## Error Handling Strategies
 

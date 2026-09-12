@@ -45,7 +45,7 @@ See [docs/payment-period-conduct.md](docs/payment-period-conduct.md) for the ful
 
 ## Updating API Reference Documentation
 
-When you add or change a public method on `ComplianceModule`, `AssetModule`, `InvestorModule`, `EventsModule`, or an exported utility/type, update `docs/api-reference.md` (and `docs/investor-portfolio.md` if the investor read model changes; `docs/contract-events.md` if event decoding changes). Review checklist:
+When you add or change a public method on `ComplianceModule`, `AssetModule`, `InvestorModule`, `EventsModule`, `TransactionModule`, or an exported utility/type, update `docs/api-reference.md` (and `docs/investor-portfolio.md` if the investor read model changes; `docs/contract-events.md` if event decoding changes; `docs/transaction-reconciliation.md` if transaction status reconciliation changes). Review checklist:
 
 - [ ] The signature block matches the method's actual TypeScript signature (parameter names, types, return type).
 - [ ] The Parameters section lists every parameter, including optional ones and their defaults.
@@ -55,3 +55,4 @@ When you add or change a public method on `ComplianceModule`, `AssetModule`, `In
 - [ ] Anything the source leaves ambiguous, incomplete, or marked with a `// TODO` is called out as an explicit note rather than assumed or omitted.
 - [ ] If the change affects compliance/whitelist-gated behavior, the compliance disclaimer at the top of `docs/api-reference.md` still accurately describes it.
 - [ ] If the change affects contract event decoding, follow the checklist in `docs/contract-events.md` (edge cases, unknown fallback, and security/compliance assumptions).
+- [ ] If the change affects transaction status reconciliation or polling, follow the checklist in `docs/transaction-reconciliation.md` (conservative status mapping, terminal states, and no blind resubmission).
