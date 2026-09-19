@@ -62,9 +62,12 @@ Maintainers and reviewers should use this guide to ensure high standards of qual
 
 ## 5. Security, Compliance & Safety
 
-- **Secret Key Protection:** Secret keys or private seeds (`S...`) are NEVER committed to version control or hardcoded in tests/examples.
+- **Secret Key Protection:** Secret keys or private seeds (`S...`) are NEVER committed to version control or hardcoded in tests/examples. Any example that constructs a `Keypair` for a signing/write operation must load it from an environment variable or secret manager (e.g. `Keypair.fromSecret(process.env.AEGIS_ISSUER_SECRET!)`), not a literal string, and must carry an explicit "never hardcode a real secret" warning comment.
+- **Admin/Privileged Examples Are Labelled:** Any example demonstrating `mint`, `transfer`, or another operation that requires issuer/admin authority on the contract must be visibly marked as privileged (e.g. a `⚠️ Privileged operation` note) so it isn't mistaken for a safe default to copy into a read-only context. See the README's [Quickstart](../README.md#quickstart) (read-only, no keypair) vs. [Privileged Operations](../README.md#privileged-operations-admin--issuer) split for the pattern to follow.
+- **RPC Request Shape:** Examples and source that call `simulateTransaction` pass a built `Transaction` (via `Account` + `TransactionBuilder`, see `src/utils/simulation.ts`) directly — never a bare contract-call operation or a `{ transaction: ... }` wrapper object cast through `as any`.
 - **RWA Protocol Compliance:** Compliance and whitelist-gated behaviors (e.g., KYC checks, transfer restrictions) maintain security guarantees and accurate disclaimers.
 - **Input Validation:** Public endpoints validate user inputs (public keys, contract IDs, transaction parameters) prior to RPC invocation.
+- **Examples Audit Trail:** `README.md`, `docs/migration-guide.md`, and `examples/migration/*.ts` are the current canonical examples reviewed against the criteria above (see issue #66). When adding a new example, review it against this list before merging.
 
 ---
 

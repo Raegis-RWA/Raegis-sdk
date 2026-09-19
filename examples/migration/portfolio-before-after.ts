@@ -11,9 +11,25 @@ import {
   xdr,
   scValToNative,
   Networks,
+  Account,
+  TransactionBuilder,
+  Keypair,
 } from '@stellar/stellar-sdk';
 import { AegisClient } from '@aegis/sdk';
 import type { InvestorPortfolio, PortfolioStatus } from '@aegis/sdk';
+
+// Simulation never signs or submits, so a real account isn't required — any
+// structurally valid source account works, e.g. a throwaway keypair.
+function buildSimulationTx(networkPassphrase: string, call: any) {
+  const sourceAccount = new Account(Keypair.random().publicKey(), '0');
+  return new TransactionBuilder(sourceAccount, {
+    fee: '100',
+    networkPassphrase,
+  })
+    .addOperation(call)
+    .setTimeout(30)
+    .build();
+}
 
 // ============================================================
 // BEFORE: Raw Soroban — Manual Portfolio Assembly
@@ -22,6 +38,7 @@ import type { InvestorPortfolio, PortfolioStatus } from '@aegis/sdk';
 async function getPortfolioRaw(
   rpcServer: rpc.Server,
   contractId: string,
+  networkPassphrase: string,
   investorAddress: string
 ) {
   const contract = new Contract(contractId);
@@ -31,9 +48,9 @@ async function getPortfolioRaw(
     'is_whitelisted',
     nativeToScVal(investorAddress, { type: 'address' })
   );
-  const whitelistResult = await rpcServer.simulateTransaction({
-    transaction: whitelistCall as any,
-  } as any);
+  // simulateTransaction takes a built Transaction, not a bare operation.
+  const whitelistTx = buildSimulationTx(networkPassphrase, whitelistCall);
+  const whitelistResult = await rpcServer.simulateTransaction(whitelistTx);
   const isKycApproved =
     rpc.Api.isSimulationSuccess(whitelistResult) && whitelistResult.result
       ? scValToNative(
@@ -46,9 +63,8 @@ async function getPortfolioRaw(
     'balance',
     nativeToScVal(investorAddress, { type: 'address' })
   );
-  const balanceResult = await rpcServer.simulateTransaction({
-    transaction: balanceCall as any,
-  } as any);
+  const balanceTx = buildSimulationTx(networkPassphrase, balanceCall);
+  const balanceResult = await rpcServer.simulateTransaction(balanceTx);
   const balance =
     rpc.Api.isSimulationSuccess(balanceResult) && balanceResult.result
       ? scValToNative(

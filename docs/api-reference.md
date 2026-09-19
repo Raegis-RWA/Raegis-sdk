@@ -68,7 +68,7 @@ try {
 }
 ```
 
-> **Open note:** `checkWhitelist` passes the raw invocation object returned by `contract.call(...)` directly as the `transaction` field to `simulateTransaction` (cast through `as any`), rather than assembling a full `Transaction` via `TransactionBuilder` the way `AssetModule.mint`/`transfer` do. The source itself flags this with a comment ("Cast required depending on SDK version wrapper"), so the exact request shape expected by `simulateTransaction` across `@stellar/stellar-sdk` versions is not fully confirmed — verify against the installed SDK version rather than assuming it's stable.
+> **Note:** `checkWhitelist` builds a full `Transaction` via the shared `buildSimulationTransaction` helper (`src/utils/simulation.ts`) before calling `simulateTransaction`, the same way `AssetModule.mint`/`transfer` build theirs — `simulateTransaction` takes a built `Transaction` directly, not a `{ transaction: ... }` wrapper around a bare, unbuilt operation. Since simulation never signs or submits anything, the source account does not need to be real: the client's configured signer is reused when present, otherwise an ephemeral keypair supplies a structurally valid source.
 
 ---
 

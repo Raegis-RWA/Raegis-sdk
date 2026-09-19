@@ -1,6 +1,6 @@
 import { AegisClient } from '../src/client';
 import { InvestorModule } from '../src/investor/portfolio';
-import { Networks, Keypair, rpc, xdr, nativeToScVal, StrKey } from '@stellar/stellar-sdk';
+import { Networks, Keypair, rpc, xdr, nativeToScVal, StrKey, Transaction } from '@stellar/stellar-sdk';
 
 jest.mock('@stellar/stellar-sdk', () => {
   const original = jest.requireActual('@stellar/stellar-sdk');
@@ -151,6 +151,34 @@ describe('InvestorModule (Portfolio Read Model)', () => {
 
       expect(portfolio.status).toBe('unavailable');
       expect(portfolio.error).toContain('Invalid investor address');
+    });
+  });
+
+  describe('Balance simulation request shape', () => {
+    /**
+     * Regression test for issue #66 ("incorrect RPC formatting"): the balance
+     * lookup used to call `simulateTransaction({ transaction: call as any }
+     * as any)` — a wrapper object around an unbuilt operation — instead of a
+     * real built `Transaction`. Assert the real shape so it can't regress.
+     */
+    it('calls simulateTransaction with a real built Transaction for the balance query', async () => {
+      (rpc.Api.isSimulationSuccess as unknown as jest.Mock).mockReturnValue(true);
+
+      const trueScValBase64 = xdr.ScVal.scvBool(true).toXDR('base64');
+      const balanceScValBase64 = xdr.ScVal.scvI128(
+        new xdr.Int128Parts({ hi: xdr.Int64.fromString('0'), lo: xdr.Uint64.fromString('0') })
+      ).toXDR('base64');
+
+      mockRpcServer.simulateTransaction
+        .mockResolvedValueOnce({ result: { retval: trueScValBase64 } })
+        .mockResolvedValueOnce({ result: { retval: balanceScValBase64 } });
+
+      await client.investor.getPortfolio(mockInvestorAddress);
+
+      expect(mockRpcServer.simulateTransaction).toHaveBeenCalledTimes(2);
+      const balanceCallArg = mockRpcServer.simulateTransaction.mock.calls[1][0];
+      expect(balanceCallArg).toBeInstanceOf(Transaction);
+      expect(balanceCallArg.networkPassphrase).toBe(Networks.TESTNET);
     });
   });
 });

@@ -1,5 +1,6 @@
 import { Contract, nativeToScVal, rpc } from '@stellar/stellar-sdk';
 import { AegisClient } from '../client';
+import { buildSimulationTransaction } from '../utils/simulation';
 import {
   InvestorPortfolio,
   PortfolioStatus,
@@ -146,9 +147,8 @@ export class InvestorModule {
     let balanceRaw = '0';
 
     try {
-      const result = await this.client.rpcServer.simulateTransaction({
-        transaction: call as any,
-      } as any);
+      const tx = buildSimulationTransaction(this.client, call);
+      const result = await this.client.rpcServer.simulateTransaction(tx);
 
       if (rpc.Api.isSimulationSuccess(result) && result.result) {
         const parsed = parseSorobanResult(result.result.retval as any);

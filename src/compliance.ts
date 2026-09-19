@@ -1,6 +1,7 @@
 import { Contract, nativeToScVal, rpc } from '@stellar/stellar-sdk';
 import { AegisClient } from './client';
 import { parseSorobanResult } from './utils/xdr-parser';
+import { buildSimulationTransaction } from './utils/simulation';
 
 export class ComplianceModule {
 private client: AegisClient;
@@ -19,12 +20,10 @@ constructor(client: AegisClient) {
 
     // Create the invocation for the read-only 'is_whitelisted' function
     const call = contract.call('is_whitelisted', nativeToScVal(address, { type: 'address' }));
+    const tx = buildSimulationTransaction(this.client, call);
 
     const result = await this.client.runNetworkOperation(() =>
-      this.client.rpcServer.simulateTransaction({
-        // Dummy transaction for simulation purposes
-        transaction: call as any, // Cast required depending on SDK version wrapper
-      } as any)
+      this.client.rpcServer.simulateTransaction(tx)
     );
 
     // rpc.Api.isSimulationSuccess acts as a type guard here

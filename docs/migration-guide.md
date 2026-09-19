@@ -32,19 +32,31 @@ Before migrating, ensure you have:
 ### Before (Raw Soroban)
 
 ```typescript
-import { rpc, Contract, nativeToScVal, Keypair, Networks, xdr, scValToNative } from '@stellar/stellar-sdk';
+import { rpc, Contract, nativeToScVal, Keypair, Networks, Account, TransactionBuilder, xdr, scValToNative } from '@stellar/stellar-sdk';
 
 const rpcServer = new rpc.Server('https://soroban-testnet.stellar.org');
 const contractId = 'C_YOUR_CONTRACT_ID';
 const networkPassphrase = Networks.TESTNET;
 
-// Read-only call: check whitelist
+// Read-only call: check whitelist.
+// simulateTransaction takes a built Transaction, not a bare operation — and
+// since simulation never signs or submits, the source account doesn't need
+// to be real; any structurally valid keypair works as a placeholder.
 const contract = new Contract(contractId);
 const call = contract.call('is_whitelisted', nativeToScVal(userAddress, { type: 'address' }));
-const result = await rpcServer.simulateTransaction({ transaction: call as any } as any);
+const simSourceAccount = new Account(Keypair.random().publicKey(), '0');
+const simTx = new TransactionBuilder(simSourceAccount, { fee: '100', networkPassphrase })
+  .addOperation(call)
+  .setTimeout(30)
+  .build();
+const result = await rpcServer.simulateTransaction(simTx);
 const isWhitelisted = scValToNative(xdr.ScVal.fromXDR(result.result.retval, 'base64'));
 
-// Write call: mint tokens (you must build everything manually)
+// ⚠️ Write call: mint tokens — a privileged, state-changing operation.
+// `adminKeypair` here must hold issuer/admin authority on the deployed
+// contract. NEVER hardcode a real secret key; load it from a secret manager
+// or an environment variable excluded from version control, e.g.:
+//   const adminKeypair = Keypair.fromSecret(process.env.AEGIS_ISSUER_SECRET!);
 const sourceAccount = new Account(adminKeypair.publicKey(), '0');
 const mintCall = contract.call(
   'mint_asset',
@@ -69,17 +81,21 @@ const response = await rpcServer.sendTransaction(tx);
 import { AegisClient } from '@aegis/sdk';
 import { Keypair, Networks } from '@stellar/stellar-sdk';
 
+// ⚠️ Privileged operation: `mint` requires a signer with issuer/admin
+// authority on the deployed contract. NEVER hardcode a real secret key —
+// load it from a secret manager or an environment variable that is
+// excluded from version control.
 const aegis = new AegisClient({
   rpcUrl: 'https://soroban-testnet.stellar.org',
   networkPassphrase: Networks.TESTNET,
   contractId: 'C_YOUR_CONTRACT_ID',
-  keypair: Keypair.fromSecret('S...'),
+  keypair: Keypair.fromSecret(process.env.AEGIS_ISSUER_SECRET!),
 });
 
-// Read-only: check whitelist
+// Read-only: check whitelist — no keypair required for this call.
 const isWhitelisted = await aegis.compliance.checkWhitelist(userAddress);
 
-// Write: mint tokens
+// Write: mint tokens (privileged — see warning above)
 const txHash = await aegis.asset.mint(recipientAddress, 1000000000);
 ```
 
@@ -99,15 +115,26 @@ const txHash = await aegis.asset.mint(recipientAddress, 1000000000);
 ### Before
 
 ```typescript
-import { rpc, Contract, nativeToScVal, xdr, scValToNative } from '@stellar/stellar-sdk';
+import { rpc, Contract, nativeToScVal, xdr, scValToNative, Account, TransactionBuilder, Keypair } from '@stellar/stellar-sdk';
 
-async function checkWhitelist(rpcServer: rpc.Server, contractId: string, address: string): Promise<boolean> {
+async function checkWhitelist(
+  rpcServer: rpc.Server,
+  contractId: string,
+  networkPassphrase: string,
+  address: string
+): Promise<boolean> {
   const contract = new Contract(contractId);
   const call = contract.call('is_whitelisted', nativeToScVal(address, { type: 'address' }));
 
-  const result = await rpcServer.simulateTransaction({
-    transaction: call as any,
-  } as any);
+  // simulateTransaction takes a built Transaction, not a bare operation.
+  // Simulation never signs or submits, so a real account isn't required —
+  // any structurally valid source account works, e.g. a throwaway keypair.
+  const sourceAccount = new Account(Keypair.random().publicKey(), '0');
+  const tx = new TransactionBuilder(sourceAccount, { fee: '100', networkPassphrase })
+    .addOperation(call)
+    .setTimeout(30)
+    .build();
+  const result = await rpcServer.simulateTransaction(tx);
 
   if (rpc.Api.isSimulationSuccess(result) && result.result) {
     const parsed = scValToNative(xdr.ScVal.fromXDR(result.result.retval, 'base64'));
@@ -133,6 +160,10 @@ const isWhitelisted = await aegis.compliance.checkWhitelist(address);
 ---
 
 ## Minting Tokens
+
+⚠️ **Privileged operation.** `signer` below must hold issuer/admin authority on
+the deployed contract. Never hardcode a real secret key — load it from a
+secret manager or an environment variable excluded from version control.
 
 ### Before
 
@@ -192,6 +223,11 @@ const txHash = await aegis.asset.mint(recipientAddress, amount);
 ---
 
 ## Transferring Tokens
+
+⚠️ **Privileged operation.** `signer` below must be the token holder, or must
+otherwise be authorized to move the asset per the deployed contract's rules.
+Never hardcode a real secret key — load it from a secret manager or an
+environment variable excluded from version control.
 
 ### Before
 
@@ -253,17 +289,27 @@ Reading a full portfolio required multiple manual calls and assembly logic:
 async function getPortfolio(
   rpcServer: rpc.Server,
   contractId: string,
+  networkPassphrase: string,
   investorAddress: string
 ) {
+  // simulateTransaction takes a built Transaction, not a bare operation.
+  // Simulation never signs or submits, so a real account isn't required —
+  // any structurally valid source account works, e.g. a throwaway keypair.
+  const buildSimTx = (call: any) => {
+    const sourceAccount = new Account(Keypair.random().publicKey(), '0');
+    return new TransactionBuilder(sourceAccount, { fee: '100', networkPassphrase })
+      .addOperation(call)
+      .setTimeout(30)
+      .build();
+  };
+
   // 1. Check KYC
   const contract = new Contract(contractId);
   const whitelistCall = contract.call(
     'is_whitelisted',
     nativeToScVal(investorAddress, { type: 'address' })
   );
-  const whitelistResult = await rpcServer.simulateTransaction({
-    transaction: whitelistCall as any,
-  } as any);
+  const whitelistResult = await rpcServer.simulateTransaction(buildSimTx(whitelistCall));
   const isKycApproved =
     rpc.Api.isSimulationSuccess(whitelistResult) && whitelistResult.result
       ? scValToNative(xdr.ScVal.fromXDR(whitelistResult.result.retval, 'base64'))
@@ -274,9 +320,7 @@ async function getPortfolio(
     'balance',
     nativeToScVal(investorAddress, { type: 'address' })
   );
-  const balanceResult = await rpcServer.simulateTransaction({
-    transaction: balanceCall as any,
-  } as any);
+  const balanceResult = await rpcServer.simulateTransaction(buildSimTx(balanceCall));
   const balance =
     rpc.Api.isSimulationSuccess(balanceResult) && balanceResult.result
       ? scValToNative(xdr.ScVal.fromXDR(balanceResult.result.retval, 'base64'))
@@ -323,7 +367,9 @@ Raw Soroban error handling requires manual checks at every step:
 
 ```typescript
 try {
-  const result = await rpcServer.simulateTransaction({ transaction: call } as any);
+  // `tx` here is a built Transaction (see the Compliance section above) —
+  // simulateTransaction does not accept a bare operation or a wrapper object.
+  const result = await rpcServer.simulateTransaction(tx);
   if (rpc.Api.isSimulationSuccess(result) && result.result) {
     return scValToNative(xdr.ScVal.fromXDR(result.result.retval, 'base64'));
   }

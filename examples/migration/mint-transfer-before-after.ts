@@ -92,6 +92,10 @@ async function transferTokensRaw(
 
 // ============================================================
 // AFTER: Aegis SDK — Mint & Transfer
+// ⚠️ Privileged operation: mint/transfer require a signing keypair with
+// issuer/admin authority on the deployed contract. NEVER hardcode a real
+// secret key — load it from an environment variable or secret manager
+// that is excluded from version control.
 // ============================================================
 
 async function mintAndTransferSDK() {
@@ -99,7 +103,7 @@ async function mintAndTransferSDK() {
     rpcUrl: 'https://soroban-testnet.stellar.org',
     networkPassphrase: Networks.TESTNET,
     contractId: 'C_YOUR_CONTRACT_ID',
-    keypair: Keypair.fromSecret('S...'),
+    keypair: Keypair.fromSecret(process.env.AEGIS_ISSUER_SECRET!),
   });
 
   // Mint 1000 tokens (in base units) to a recipient
