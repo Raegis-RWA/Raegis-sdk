@@ -85,6 +85,19 @@ const capability = await aegis.role.checkCapability('G_USER_PUBLIC_KEY', 'receiv
 console.log('Can receive transfer?', capability.isPermitted);
 ```
 
+## Investor Eligibility Explanation
+Turn a whitelist boolean (or revoke signal) into a UI-friendly explanation with a
+reason code and suggested next action. This is dashboard UX guidance — not a legal
+determination. See [Investor Eligibility Explanation](./docs/investor-eligibility.md).
+
+```typescript
+const explanation = await aegis.investor.explainEligibility('G_USER_PUBLIC_KEY');
+console.log(explanation.status); // 'approved' | 'blocked' | 'revoked' | 'unknown' | 'unavailable'
+console.log(explanation.code);   // e.g. 'NOT_WHITELISTED'
+console.log(explanation.nextAction); // e.g. 'complete-kyc'
+console.log(explanation.disclaimer); // always present; no legal guarantee
+```
+
 ## Contract Event Decoder
 Decode Soroban contract events into typed audit-trail models for dashboards and indexers.
 

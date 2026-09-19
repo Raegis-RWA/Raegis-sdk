@@ -2,6 +2,8 @@
 
 The `InvestorModule` provides a consolidated, typed read model (`InvestorPortfolio`) designed for investor dashboards, mobile wallets, and compliance monitoring screens. It aggregates asset balances, compliance whitelist status, asset metadata, formatted display amounts, and transfer eligibility into a single unified data structure.
 
+For UI-friendly explanations of *why* an investor is approved, blocked, revoked, unknown, or unavailable — including reason codes and suggested next actions — see [Investor Eligibility Explanation](./investor-eligibility.md). Eligibility explanations are dashboard UX signals and do not imply a legal or regulatory guarantee.
+
 ## Accessing the Portfolio Module
 
 Access `investor` via an initialized `AegisClient`:

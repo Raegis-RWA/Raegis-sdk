@@ -157,11 +157,39 @@ try {
 
 ## `InvestorModule`
 
-Read model service for building investor dashboard views.
+Read model service for building investor dashboard views. See
+[Investor Portfolio Documentation](./investor-portfolio.md) and
+[Investor Eligibility Explanation](./investor-eligibility.md).
 
 ### Methods
 * `getPortfolio(investorAddress: string, options?: FetchPortfolioOptions): Promise<InvestorPortfolio>`
   Fetches investor balances, KYC whitelist compliance, asset metadata, formatted display balances, transfer eligibility, and operational portfolio status (`active`, `empty`, `blocked`, `unavailable`).
+* `explainEligibility(investorAddress: string): Promise<InvestorEligibilityExplanation>`
+  Runs `ComplianceModule.checkWhitelist` and maps the result into a UI explanation with reason code, safe message, suggested `nextAction`, and a fixed non-guarantee `disclaimer`. A bare whitelist `false` becomes `blocked` (not `revoked`). Invalid addresses and compliance failures become `unavailable` without copying raw RPC errors. `verified` is always `false`.
+* `explainEligibilityFromSignals(input): InvestorEligibilityExplanation`
+  Pure mapping of already-known signals (no RPC). Use when a portfolio/role result is already loaded, or when an off-chain KYC system / admin receipt / whitelist-remove event confirms a revoke via `isKycRevoked: true`.
+
+### Standalone helpers
+* `buildInvestorEligibilityExplanation(input)` — pure mapper behind the module methods. Results are frozen.
+* `explainWhitelistResult(isKycApproved, options?)` — convenience for a boolean whitelist result.
+* `normalizeInvestorEligibilityStatus(status)` — maps aliases to `approved` | `blocked` | `revoked` | `unknown` | `unavailable`; unrecognised values return `unknown`.
+* `ELIGIBILITY_DISCLAIMER` — the fixed non-guarantee notice attached to every explanation.
+
+**Example**
+```typescript
+const explanation = await client.investor.explainEligibility('G_INVESTOR');
+
+if (explanation.status === 'blocked') {
+  // Show KYC CTA — do not treat this as a legal determination.
+  console.log(explanation.nextAction); // 'complete-kyc'
+}
+console.log(explanation.disclaimer);
+```
+
+> **Open note:** `checkWhitelist` only returns a boolean, so the live
+> `explainEligibility` path cannot emit `revoked` on its own. Callers that learn
+> of a revoke from an admin receipt, contract event, or off-chain KYC system
+> should pass `isKycRevoked: true` through `explainEligibilityFromSignals`.
 
 ## `RoleModule`
 

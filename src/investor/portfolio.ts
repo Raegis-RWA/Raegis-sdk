@@ -8,8 +8,13 @@ import {
   FetchPortfolioOptions,
   TransferEligibility,
 } from '../types/portfolio';
+import {
+  InvestorEligibilityExplanation,
+  InvestorEligibilityExplanationInput,
+} from '../types/eligibility';
 import { PortfolioError } from '../errors/portfolio';
 import { parseSorobanResult } from '../utils/xdr-parser';
+import { buildInvestorEligibilityExplanation } from './eligibility';
 
 /**
  * Module for querying and processing investor portfolio read models.
@@ -19,6 +24,53 @@ export class InvestorModule {
 
   constructor(client: AegisClient) {
     this.client = client;
+  }
+
+  /**
+   * Explains investor eligibility from the live compliance whitelist check.
+   *
+   * Returns a frozen UI explanation with a reason code, safe message, and
+   * suggested next action. Does not imply a legal or regulatory guarantee —
+   * see `explanation.disclaimer`. A bare whitelist `false` maps to `blocked`;
+   * pass `isKycRevoked` through {@link explainEligibilityFromSignals} when a
+   * revoke is known from another source.
+   */
+  public async explainEligibility(
+    investorAddress: string,
+  ): Promise<InvestorEligibilityExplanation> {
+    if (!investorAddress || typeof investorAddress !== 'string') {
+      return buildInvestorEligibilityExplanation({
+        address: investorAddress || '',
+        invalidAddress: true,
+      });
+    }
+
+    try {
+      const isKycApproved =
+        await this.client.compliance.checkWhitelist(investorAddress);
+      return buildInvestorEligibilityExplanation({
+        address: investorAddress,
+        isKycApproved,
+      });
+    } catch {
+      // Raw RPC/network messages are intentionally omitted so secrets and
+      // provider payloads never reach dashboard copy.
+      return buildInvestorEligibilityExplanation({
+        address: investorAddress,
+        complianceQueryFailed: true,
+      });
+    }
+  }
+
+  /**
+   * Maps already-known compliance signals into an eligibility explanation
+   * without contacting RPC. Useful when a portfolio or role result is already
+   * in hand, or when an off-chain KYC system reports a revoke.
+   */
+  public explainEligibilityFromSignals(
+    input: InvestorEligibilityExplanationInput,
+  ): InvestorEligibilityExplanation {
+    return buildInvestorEligibilityExplanation(input);
   }
 
   /**

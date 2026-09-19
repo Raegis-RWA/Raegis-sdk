@@ -19,6 +19,12 @@ export * from './errors/client-factory';
 export { ComplianceModule } from './compliance';
 export { AssetModule } from './asset';
 export { InvestorModule } from './investor/portfolio';
+export {
+  buildInvestorEligibilityExplanation,
+  explainWhitelistResult,
+  normalizeInvestorEligibilityStatus,
+  ELIGIBILITY_DISCLAIMER,
+} from './investor/eligibility';
 export { RoleModule } from './role';
 export { EventsModule } from './events/module';
 export { decodeContractEvent, decodeContractEvents } from './events/decoder';
@@ -44,6 +50,8 @@ export { resolveClientConfig } from './config/validate';
 export { AEGIS_ENVIRONMENTS, getEnvironmentPreset } from './config/environments';
 export * from './types/portfolio';
 export * from './errors/portfolio';
+export * from './types/eligibility';
+export * from './errors/eligibility';
 export * from './types/role';
 export * from './errors/role';
 export * from './types/admin-receipt';
