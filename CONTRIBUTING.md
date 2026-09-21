@@ -43,7 +43,7 @@ See [docs/payment-period-conduct.md](docs/payment-period-conduct.md) for the ful
 
 ---
 
-## Updating API Reference Documentation
+## Documentation Standards
 
 When you add or change a public method on `ComplianceModule`, `AssetModule`, `InvestorModule`, `EventsModule`, or an exported utility/type, update `docs/api-reference.md` (and `docs/investor-portfolio.md` if the investor read model changes; `docs/contract-events.md` if event decoding changes). Review checklist:
 
@@ -55,3 +55,8 @@ When you add or change a public method on `ComplianceModule`, `AssetModule`, `In
 - [ ] Anything the source leaves ambiguous, incomplete, or marked with a `// TODO` is called out as an explicit note rather than assumed or omitted.
 - [ ] If the change affects compliance/whitelist-gated behavior, the compliance disclaimer at the top of `docs/api-reference.md` still accurately describes it.
 - [ ] If the change affects contract event decoding, follow the checklist in `docs/contract-events.md` (edge cases, unknown fallback, and security/compliance assumptions).
+
+---
+
+## Guides
+- [Contributor Implementation Guide](docs/contributor-implementation-guide.md) — how to design, implement, type, test, and document a change so it stays safe for RWA/compliance use cases and consistent with the SDK, dashboard, and contract boundaries.

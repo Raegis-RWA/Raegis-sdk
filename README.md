@@ -137,6 +137,9 @@ environments, what the automated probes cover, and integration guidance.
 
 For step-by-step instructions on reproducing and fixing CI check failures, see the [CI Resolution Workflow](docs/ci-resolution-workflow.md).
 
+## Guides
+- [Contributor Implementation Guide](docs/contributor-implementation-guide.md) — how to design, implement, type, test, and document a change so it stays safe for RWA/compliance use cases and consistent with the SDK, dashboard, and contract boundaries.
+
 ## Contributing
 We welcome contributions! Please check our [CONTRIBUTING.md](CONTRIBUTING.md) for our branching strategy and code style guidelines.
 
