@@ -31,6 +31,10 @@ client.setBalance(fixtures.investorAddress, '5000000000'); // raw integer (7 dec
 
 // Compliance
 const isApproved = await client.compliance.checkWhitelist(fixtures.investorAddress);
+const batch = await client.compliance.checkWhitelistBatch([
+  fixtures.investorAddress,
+  fixtures.secondaryInvestorAddress,
+]);
 
 // Investor portfolio read model
 const portfolio = await client.investor.getPortfolio(fixtures.investorAddress);
@@ -47,6 +51,7 @@ console.log(client.transactions[0]); // { hash, type, from, to, amount, timestam
 Creates an in-memory `MockAegisClient` with the same module surface as `AegisClient`:
 
 * `client.compliance.checkWhitelist(address)` → `Promise<boolean>`
+* `client.compliance.checkWhitelistBatch(addresses, options?)` → `Promise<ComplianceBatchResult>`
 * `client.asset.mint(to, amount)` → `Promise<string>` (mock tx hash)
 * `client.asset.transfer(to, amount)` → `Promise<string>` (mock tx hash)
 * `client.investor.getPortfolio(address, options?)` → `Promise<InvestorPortfolio>`

@@ -17,6 +17,7 @@ export type {
 export * from './types/client-factory';
 export * from './errors/client-factory';
 export { ComplianceModule } from './compliance';
+export { buildComplianceBatchDiagnostic } from './diagnostics/compliance';
 export { AssetModule } from './asset';
 export { InvestorModule } from './investor/portfolio';
 export { RoleModule } from './role';
@@ -44,6 +45,8 @@ export { resolveClientConfig } from './config/validate';
 export { AEGIS_ENVIRONMENTS, getEnvironmentPreset } from './config/environments';
 export * from './types/portfolio';
 export * from './errors/portfolio';
+export * from './types/compliance-batch';
+export * from './errors/compliance';
 export * from './types/role';
 export * from './errors/role';
 export * from './types/admin-receipt';

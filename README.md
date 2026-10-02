@@ -73,6 +73,27 @@ const aegis = new AegisClient({
 });
 ```
 
+## Batch Compliance Queries
+
+Check an admin compliance table without unbounded RPC fan-out or all-or-nothing
+failure:
+
+```typescript
+const batch = await aegis.compliance.checkWhitelistBatch(
+  ['G_INVESTOR_ONE', 'G_INVESTOR_TWO', 'invalid-input'],
+  { concurrency: 4 },
+);
+
+for (const item of batch.items) {
+  console.log(item.index, item.status, item.isWhitelisted);
+}
+```
+
+Results preserve input order, invalid addresses stay per-item, and query failures
+carry safe diagnostics. The SDK deduplicates by default and does not retry
+automatically during rate limiting. See
+[Compliance Batch Queries](./docs/compliance-batch-queries.md).
+
 ## Role Discovery & Capability Checks
 Check what an address is classified as, and what it can currently attempt through the SDK.
 This is a client-side convenience for UI gating, not on-chain authorization — see the

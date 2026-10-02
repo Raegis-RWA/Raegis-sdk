@@ -41,6 +41,8 @@ Below is the complete map of every public SDK module. Reference this when comple
 |---|---|---|---|
 | Client | `src/client.ts` | `AegisClient` | Top-level SDK client; initializes RPC, configures modules, provides `runNetworkOperation()` |
 | Compliance | `src/compliance.ts` | `ComplianceModule` | Queries the Aegis Soroban contract for KYC/whitelist status |
+| Compliance Batch | `src/compliance/batch.ts` | `ComplianceModule.checkWhitelistBatch` | Validates and queries multiple whitelist states with bounded concurrency and partial-failure isolation |
+| Compliance Diagnostics | `src/diagnostics/compliance.ts` | `buildComplianceBatchDiagnostic` | Builds address-free batch failure roll-ups |
 | Asset | `src/asset.ts` | `AssetModule` | Submits mint and transfer transactions to the Soroban contract |
 | Role Discovery | `src/role.ts` | `RoleModule` | Client-side role classification and capability gating |
 | Admin Receipts | `src/admin/receipts.ts` | `normalizeAdminActionStatus`, `buildAdminTransactionExplorerUrl`, `buildAdminActionReceipt` | Builds serializable admin action receipts |
@@ -66,6 +68,7 @@ Reference this when completing the "Test(s)" column.
 | Test File | Covers |
 |---|---|
 | `tests/client.test.ts` | Client configuration, module instantiation, signer requirements |
+| `tests/compliance-batch.test.ts` | Batch validation, ordering, concurrency, partial failures, rate limits, safe diagnostics |
 | `tests/config.test.ts` | Environment presets, config validation, error cases |
 | `tests/role.test.ts` | Role discovery, capability checks, capability matrix |
 | `tests/investor.test.ts` | Portfolio fetching, balance calculations, status mapping |
@@ -85,6 +88,7 @@ Reference this when completing the "Doc(s)" column.
 | Document | Content |
 |---|---|
 | `docs/api-reference.md` | Full API reference for all public modules |
+| `docs/compliance-batch-queries.md` | Batch compliance usage, performance, rate limits, diagnostics, and security |
 | `docs/testing.md` | Mock client setup and testing patterns |
 | `docs/contract-events.md` | Event decoder usage and supported topics |
 | `docs/role-discovery.md` | Role discovery and capability gating |

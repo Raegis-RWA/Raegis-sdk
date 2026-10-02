@@ -45,7 +45,7 @@ public async checkWhitelist(address: string): Promise<boolean>
 `Promise<boolean>` — `true` if the simulated call to `is_whitelisted` succeeds and decodes to `true`. Resolves to `false` both when the contract reports the address is not whitelisted, *and* when the simulation does not succeed or returns no result — the current implementation does not distinguish those two cases in its return value.
 
 **Errors**
-* If `simulateTransaction` itself throws (network failure, malformed request, etc.), the error is logged via `console.error` and then re-thrown as-is. It is the raw error from the underlying `@stellar/stellar-sdk` RPC call — `checkWhitelist` does not wrap it in `PortfolioError` or any other typed error.
+* If `simulateTransaction` throws, the client network boundary classifies it as a typed, safe `NetworkFailure`. Synchronous address/XDR construction and result parsing remain outside that boundary and may throw their underlying error.
 * A failed/unsuccessful simulation that does *not* throw is swallowed and reported as `false` (see Returns above), not as an error.
 
 **Example**
@@ -69,6 +69,66 @@ try {
 ```
 
 > **Open note:** `checkWhitelist` passes the raw invocation object returned by `contract.call(...)` directly as the `transaction` field to `simulateTransaction` (cast through `as any`), rather than assembling a full `Transaction` via `TransactionBuilder` the way `AssetModule.mint`/`transfer` do. The source itself flags this with a comment ("Cast required depending on SDK version wrapper"), so the exact request shape expected by `simulateTransaction` across `@stellar/stellar-sdk` versions is not fully confirmed — verify against the installed SDK version rather than assuming it's stable.
+
+### `checkWhitelistBatch(addresses, options?): Promise<ComplianceBatchResult>`
+
+Checks multiple investor addresses with per-item validation, bounded
+concurrency, input-order preservation, and safe partial-failure mapping.
+
+**Signature**
+```typescript
+public async checkWhitelistBatch(
+  addresses: readonly string[],
+  options: ComplianceBatchOptions = {},
+): Promise<ComplianceBatchResult>
+```
+
+**Parameters**
+* `addresses` (`readonly string[]`): Stellar account public keys (`G...`). Runtime non-string, malformed, muxed (`M...`), and contract (`C...`) inputs become per-item `invalid-address` results without reaching RPC.
+* `options.concurrency` (number, optional): Maximum simultaneous checks. Defaults to `4`; integer range 1–20.
+* `options.deduplicate` (boolean, optional): Query identical valid addresses once and fan out the result. Defaults to `true`.
+* `options.maxBatchSize` (number, optional): Maximum accepted input length. Defaults to `100`; integer range 1–1000.
+
+**Returns**
+`Promise<ComplianceBatchResult>` with:
+
+* one frozen item per input, in original order;
+* item statuses `whitelisted`, `not-whitelisted`, `invalid-address`, or `failed`;
+* `isWhitelisted: false` on invalid/failed items (fail closed, but callers must branch on `status`);
+* safe `NetworkFailureDiagnostic` data on failed items;
+* counts, actual RPC query count, duplicate count, partial/exhausted flags, rate-limit flag, duration, and fetch timestamp.
+
+An empty input returns a successful empty result. Individual invalid inputs,
+network failures, and parse failures do not reject the batch. Invalid arbitrary
+input is not echoed; correlate through `item.index`.
+
+**Errors**
+Throws `ComplianceBatchError` before RPC when the runtime input is not an array
+(`INVALID_BATCH_INPUT`), exceeds `maxBatchSize` (`BATCH_TOO_LARGE`), or contains
+invalid options (`INVALID_BATCH_OPTIONS`). Expected per-item failures are returned,
+not thrown.
+
+**Example**
+```typescript
+const result = await client.compliance.checkWhitelistBatch(
+  ['G_INVESTOR_ONE', 'G_INVESTOR_TWO'],
+  { concurrency: 4 },
+);
+
+for (const item of result.items) {
+  console.log(item.index, item.status, item.isWhitelisted);
+}
+```
+
+### `buildComplianceBatchDiagnostic(result): ComplianceBatchDiagnostic`
+
+Builds a frozen, address-free roll-up for telemetry and support reports. It
+contains counts, classified failure-code counts, a recovery action, and the
+largest safe `retryAfterSeconds` value. It never includes item addresses,
+original invalid input, raw errors, RPC URLs, headers, or credentials.
+
+See [Compliance Batch Queries](./compliance-batch-queries.md) for performance,
+rate-limit, retry, dashboard, and security guidance.
 
 ---
 

@@ -103,7 +103,7 @@ export interface AegisReadOnlyClient {
   readonly capabilities: RoleCapabilities;
   /** The underlying `AegisClient` instance. */
   readonly client: AegisClient;
-  /** Compliance query module (read-only: checkWhitelist). */
+  /** Compliance query module (read-only: single and batch whitelist checks). */
   readonly compliance: ComplianceModule;
   /** Investor portfolio read module. */
   readonly investor: InvestorModule;

@@ -50,7 +50,7 @@ file must cover **happy-path** and **negative-path** scenarios.
 
 ### Compliance Checks
 
-Tests for `ComplianceModule` methods (`checkWhitelist`) must cover:
+Tests for `ComplianceModule` methods (`checkWhitelist`, `checkWhitelistBatch`) must cover:
 
 | Scenario | Expectation |
 |---|---|
@@ -58,6 +58,10 @@ Tests for `ComplianceModule` methods (`checkWhitelist`) must cover:
 | Non-whitelisted address | Returns `false` |
 | RPC failure / timeout | Throws or returns fallback (module-dependent) |
 | Invalid address (empty string) | Returns `false` or typed error |
+| Mixed valid and invalid batch input | Preserves order; invalid items do not reach RPC |
+| Partial batch RPC failure | Successful items remain resolved; failure is safe per-item |
+| Batch concurrency / duplicates | Configured bound is honored; default deduplication avoids duplicate RPC work |
+| Batch rate limiting | Safe diagnostic recommends backoff without exposing addresses or raw errors |
 
 ```typescript
 // Happy-path: whitelisted investor

@@ -8,6 +8,11 @@ import {
   TransferEligibility,
 } from '../types/portfolio';
 import {
+  ComplianceBatchOptions,
+  ComplianceBatchResult,
+} from '../types/compliance-batch';
+import { executeComplianceBatch } from '../compliance/batch';
+import {
   MOCK_CONTRACT_ID,
   DEFAULT_MOCK_ASSET_METADATA,
   buildMockTxHash,
@@ -192,6 +197,17 @@ export class MockComplianceModule {
       throw new Error('Mock compliance RPC failure.');
     }
     return this.client._isWhitelisted(address);
+  }
+
+  public async checkWhitelistBatch(
+    addresses: readonly string[],
+    options: ComplianceBatchOptions = {},
+  ): Promise<ComplianceBatchResult> {
+    return executeComplianceBatch(
+      addresses,
+      (address) => this.checkWhitelist(address),
+      options,
+    );
   }
 }
 

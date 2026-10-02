@@ -22,6 +22,30 @@ describe('MockAegisClient', () => {
       ).resolves.toBe(false);
     });
 
+    it('supports deterministic batch compliance queries', async () => {
+      const fixtures = createMockFixtures();
+      const client = createMockAegisClient();
+      client.setWhitelisted(fixtures.investorAddress, true);
+
+      const result = await client.compliance.checkWhitelistBatch([
+        fixtures.investorAddress,
+        'invalid input must stay per-item',
+        fixtures.secondaryInvestorAddress,
+      ]);
+
+      expect(result.items.map((item) => item.status)).toEqual([
+        'whitelisted',
+        'invalid-address',
+        'not-whitelisted',
+      ]);
+      expect(result.summary).toMatchObject({
+        requested: 3,
+        queried: 2,
+        invalid: 1,
+        failed: 0,
+      });
+    });
+
     it('throws when compliance failure simulation is enabled', async () => {
       const fixtures = createMockFixtures();
       const client = createMockAegisClient({ simulateComplianceFailure: true });
