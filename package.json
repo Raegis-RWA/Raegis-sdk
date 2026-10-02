@@ -20,6 +20,8 @@
     "test:compat": "node scripts/check-compat.mjs",
     "check": "npm run build && npm test -- --runInBand && npm run test:compat",
     "verify": "npm run lint && npm run format && npm run build && npm test -- --runInBand && npm run test:compat",
+    "local:up": "docker compose -f docker-compose.local.yml up -d",
+    "local:down": "docker compose -f docker-compose.local.yml down",
     "lint": "eslint src --ext .ts",
     "format": "prettier --write \"src/**/*.ts\"",
     "prepare": "npm run build"

@@ -24,6 +24,7 @@ describe('AegisClient environment presets', () => {
     });
 
     expect(client.networkPassphrase).toBe(AEGIS_ENVIRONMENTS.local.networkPassphrase);
+    expect(client.networkPassphrase).toBe(Networks.STANDALONE);
   });
 
   it('rejects the mainnet preset unless allowMainnet is set', () => {

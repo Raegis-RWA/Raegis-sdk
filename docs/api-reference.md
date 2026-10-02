@@ -16,6 +16,16 @@ The entry point for interacting with the Aegis Protocol.
 
 Either `environment` or both `rpcUrl` and `networkPassphrase` must be provided. Invalid or unsafe configuration (malformed URLs, insecure `http://` overrides outside the `local` preset, empty passphrases, unavailable environments) throws a `ConfigValidationError`.
 
+### Local development helpers
+
+For Quickstart / standalone workflows prefer:
+
+* `createLocalClient(options)` / `resolveLocalConfig(options)` — typed local defaults, injected env loading, required contract ID, loopback enforcement
+* `checkLocalNetwork(target)` — readiness probe (`ready` | `unavailable` | `misconfigured`)
+* `LOCAL_DEV_DEFAULTS` / `LOCAL_ENV_KEYS` — shared constants
+
+See [Local development](./local-development.md). Environment presets: [Environment Presets](./environments.md).
+
 ### Client Modules
 * `client.compliance`: Whitelist & KYC verification module (`ComplianceModule`).
 * `client.asset`: Minting & transferring RWA tokens module (`AssetModule`).

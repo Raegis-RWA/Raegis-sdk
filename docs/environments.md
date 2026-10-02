@@ -48,6 +48,19 @@ Overrides are validated: malformed URLs and empty passphrases throw a `ConfigVal
 Plain `http://` URLs are only accepted when `environment: 'local'` — using `http://` against
 `testnet` or `mainnet` throws, since it almost always indicates a misconfigured endpoint.
 
+## Local development workflow
+
+For contributor machines and CI sandboxes, prefer the dedicated local helpers
+over a bare `environment: 'local'` preset:
+
+* `createLocalClient` / `resolveLocalConfig` — defaults, env loading, required contract ID
+* Loopback / `host.docker.internal` enforcement for plain `http://` RPC URLs
+* `checkLocalNetwork` — readiness probe with “start Docker” hints
+* `npm run local:up` — optional Quickstart via `docker-compose.local.yml`
+
+See [Local development](./local-development.md) for the full workflow, env var
+table, security assumptions, and reviewer checklist.
+
 ## The `mainnet` Preset Is Gated
 
 The Aegis protocol has not yet been audited/deployed on Stellar mainnet, so the `mainnet`

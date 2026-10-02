@@ -42,6 +42,25 @@ export {
 } from './diagnostics/network';
 export { resolveClientConfig } from './config/validate';
 export { AEGIS_ENVIRONMENTS, getEnvironmentPreset } from './config/environments';
+export {
+  LOCAL_DEV_DEFAULTS,
+  LOCAL_ENV_KEYS,
+  checkLocalNetwork,
+  createLocalClient,
+  inspectLocalRpcUrl,
+  isAllowedLocalDevHostname,
+  isLoopbackHostname,
+  resolveLocalConfig,
+  toAegisClientConfig,
+} from './config/local';
+export type {
+  LocalDevConfigOptions,
+  LocalEnvRecord,
+  LocalNetworkHealth,
+  LocalNetworkStatus,
+  ResolvedLocalDevConfig,
+} from './config/local';
+export * from './errors/local';
 export * from './types/portfolio';
 export * from './errors/portfolio';
 export * from './types/role';

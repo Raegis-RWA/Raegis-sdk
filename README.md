@@ -104,6 +104,29 @@ if (event.kind === 'transfer') {
 
 See [Contract Event Decoder](./docs/contract-events.md) for supported topics, unknown fallback behaviour, and dashboard integration guidance.
 
+## Local Development
+
+Use the local-development helpers against Stellar Quickstart / standalone
+instead of hand-rolling `environment: 'local'`:
+
+```typescript
+import { createLocalClient, checkLocalNetwork } from '@aegis/sdk';
+import { Keypair } from '@stellar/stellar-sdk';
+
+const client = createLocalClient({
+  contractId: process.env.AEGIS_CONTRACT_ID!,
+  env: process.env,
+  keypair: Keypair.random(),
+});
+
+const health = await checkLocalNetwork(client);
+```
+
+See [Local development](./docs/local-development.md) for Docker Compose
+(`npm run local:up`), env vars, loopback policy, and security assumptions.
+Environment presets (testnet / local / mainnet) are documented in
+[Environment presets](./docs/environments.md).
+
 ## Testing
 To run the SDK unit tests locally:
 

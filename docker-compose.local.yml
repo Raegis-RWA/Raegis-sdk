@@ -1,0 +1,26 @@
+# Local Stellar Quickstart for Aegis SDK development.
+# Usage: npm run local:up
+#
+# After the container is healthy, deploy the Aegis contract with stellar-cli
+# against the standalone network and set AEGIS_CONTRACT_ID in your .env.
+
+services:
+  stellar-quickstart:
+    image: stellar/quickstart:latest
+    container_name: aegis-sdk-local-stellar
+    ports:
+      - '8000:8000'
+    # --local selects Networks.STANDALONE; --enable-soroban-rpc exposes RPC.
+    command: ['--local', '--enable-soroban-rpc']
+    healthcheck:
+      test:
+        [
+          'CMD',
+          'curl',
+          '-sf',
+          'http://localhost:8000/soroban/rpc',
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 40s

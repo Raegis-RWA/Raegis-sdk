@@ -34,7 +34,8 @@ export const AEGIS_ENVIRONMENTS: Record<AegisEnvironmentName, AegisEnvironmentPr
     rpcUrl: 'http://localhost:8000/soroban/rpc',
     networkPassphrase: Networks.STANDALONE,
     available: true,
-    description: 'Local standalone network (e.g. Stellar Quickstart Docker image).',
+    description:
+      'Local standalone network (e.g. Stellar Quickstart). Prefer createLocalClient / resolveLocalConfig for loopback enforcement, env loading, and readiness checks — see docs/local-development.md.',
   },
   mainnet: {
     name: 'mainnet',
