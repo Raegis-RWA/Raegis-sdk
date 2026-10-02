@@ -33,6 +33,16 @@ describe('AegisClient environment presets', () => {
         contractId: mockContractId,
       });
     }).toThrow(ConfigValidationError);
+
+    try {
+      new AegisClient({
+        environment: 'mainnet',
+        contractId: mockContractId,
+      });
+    } catch (error) {
+      expect(error).toBeInstanceOf(ConfigValidationError);
+      expect((error as ConfigValidationError).code).toBe('ENVIRONMENT_UNAVAILABLE');
+    }
   });
 
   it('allows the mainnet preset when allowMainnet is explicitly true', () => {
@@ -73,6 +83,18 @@ describe('AegisClient environment presets', () => {
         rpcUrl: 'not-a-url',
       });
     }).toThrow(ConfigValidationError);
+
+    try {
+      new AegisClient({
+        environment: 'testnet',
+        contractId: mockContractId,
+        rpcUrl: 'not-a-url-with-secret-token',
+      });
+    } catch (error) {
+      expect(error).toBeInstanceOf(ConfigValidationError);
+      expect((error as ConfigValidationError).code).toBe('INVALID_RPC_URL');
+      expect((error as Error).message).not.toContain('secret-token');
+    }
   });
 
   it('rejects an empty networkPassphrase override', () => {
@@ -119,5 +141,18 @@ describe('AegisClient explicit (legacy) configuration', () => {
       // @ts-expect-error intentionally missing required config for runtime validation coverage
       new AegisClient({ environment: 'testnet' });
     }).toThrow(ConfigValidationError);
+  });
+
+  it('throws INVALID_CONTRACT_ID for non-StrKey placeholders', () => {
+    try {
+      new AegisClient({
+        environment: 'testnet',
+        contractId: 'C_YOUR_CONTRACT_ID',
+      });
+      throw new Error('expected ConfigValidationError');
+    } catch (error) {
+      expect(error).toBeInstanceOf(ConfigValidationError);
+      expect((error as ConfigValidationError).code).toBe('INVALID_CONTRACT_ID');
+    }
   });
 });

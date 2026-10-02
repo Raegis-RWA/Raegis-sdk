@@ -50,5 +50,9 @@ Failing CI checks can block PR approval. This guide explains how to diagnose and
 
 ## Still stuck?
 
+- Before opening an issue, attach a **redacted** configuration diagnostic
+  (`client.diagnoseConfiguration()` or `buildConfigDiagnostic(config)`). See
+  [Configuration diagnostics](configuration-diagnostics.md). Never paste raw
+  RPC URLs, Keypairs, or `.env` contents.
 - Check [existing issues](https://github.com/AegisRWA/aegis-sdk/issues) or open a new one.
 - Reference the failing CI run URL in your issue so maintainers can see exactly what happened.

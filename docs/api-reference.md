@@ -14,7 +14,14 @@ The entry point for interacting with the Aegis Protocol.
 * `keypair` (Keypair, optional): A Stellar SDK Keypair object used for signing state-changing transactions (like minting or transferring). If omitted, the client can only make read-only calls.
 * `allowMainnet` (boolean, optional): Must be `true` to use `environment: 'mainnet'`, which is gated until the Aegis protocol is live on the public network.
 
-Either `environment` or both `rpcUrl` and `networkPassphrase` must be provided. Invalid or unsafe configuration (malformed URLs, insecure `http://` overrides outside the `local` preset, empty passphrases, unavailable environments) throws a `ConfigValidationError`.
+Either `environment` or both `rpcUrl` and `networkPassphrase` must be provided. Invalid or unsafe configuration (malformed URLs, insecure `http://` overrides outside the `local` preset, empty passphrases, unavailable environments, non-StrKey contract IDs) throws a `ConfigValidationError`. Validation error messages redact sensitive URL segments.
+
+### Configuration diagnostics
+
+* `client.diagnoseConfiguration(): ConfigDiagnostic` — frozen, redacted summary of RPC URL, contract ID, network, feature flags, and signer presence. Safe to paste into GitHub support requests.
+* Standalone helper: `buildConfigDiagnostic(config)` — same shape, usable when construction itself fails.
+
+See [Configuration diagnostics](./configuration-diagnostics.md).
 
 ### Client Modules
 * `client.compliance`: Whitelist & KYC verification module (`ComplianceModule`).

@@ -1,6 +1,7 @@
-import { Keypair } from '@stellar/stellar-sdk';
+import { Keypair, StrKey } from '@stellar/stellar-sdk';
 import { AEGIS_ENVIRONMENTS, AegisEnvironmentName } from './environments';
 import { ConfigValidationError } from '../errors/config';
+import { redactRpcUrl } from '../security/redaction';
 
 /**
  * Configuration accepted by `AegisClient`.
@@ -27,32 +28,75 @@ export interface ResolvedAegisConfig {
   keypair?: Keypair;
 }
 
-function validateRpcUrl(rpcUrl: string, opts: { allowInsecure: boolean }): void {
+/**
+ * Validates an RPC URL. Error messages never echo the raw URL — credentials and
+ * API keys commonly live in the userinfo, path, or query string.
+ */
+export function validateRpcUrl(
+  rpcUrl: string,
+  opts: { allowInsecure: boolean },
+): void {
   let parsed: URL;
   try {
     parsed = new URL(rpcUrl);
   } catch {
-    throw new ConfigValidationError(`Invalid rpcUrl: "${rpcUrl}" is not a valid URL.`, 'INVALID_RPC_URL');
+    throw new ConfigValidationError(
+      `Invalid rpcUrl: "${redactRpcUrl(rpcUrl)}" is not a valid URL.`,
+      'INVALID_RPC_URL',
+    );
   }
 
   if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
     throw new ConfigValidationError(
-      `Invalid rpcUrl: unsupported protocol "${parsed.protocol}" in "${rpcUrl}".`,
-      'INVALID_RPC_URL'
+      `Invalid rpcUrl: unsupported protocol "${parsed.protocol}" in "${redactRpcUrl(rpcUrl)}".`,
+      'INVALID_RPC_URL',
     );
   }
 
   if (parsed.protocol === 'http:' && !opts.allowInsecure) {
     throw new ConfigValidationError(
-      `Insecure rpcUrl "${rpcUrl}" is not allowed for this environment. Use an https:// endpoint, or the "local" environment preset for plain http.`,
-      'INVALID_RPC_URL'
+      `Insecure rpcUrl "${redactRpcUrl(rpcUrl)}" is not allowed for this environment. ` +
+        'Use an https:// endpoint, or the "local" environment preset for plain http.',
+      'INVALID_RPC_URL',
     );
   }
 }
 
-function validateNetworkPassphrase(networkPassphrase: string): void {
-  if (typeof networkPassphrase !== 'string' || networkPassphrase.trim().length === 0) {
-    throw new ConfigValidationError('Invalid networkPassphrase: must be a non-empty string.', 'INVALID_NETWORK_PASSPHRASE');
+/**
+ * Validates a network passphrase. The raw value is never echoed in the error.
+ */
+export function validateNetworkPassphrase(networkPassphrase: string): void {
+  if (
+    typeof networkPassphrase !== 'string' ||
+    networkPassphrase.trim().length === 0
+  ) {
+    throw new ConfigValidationError(
+      'Invalid networkPassphrase: must be a non-empty string.',
+      'INVALID_NETWORK_PASSPHRASE',
+    );
+  }
+}
+
+/**
+ * Validates a StrKey-encoded Soroban contract ID.
+ *
+ * Whitespace and placeholder values like `"C..."` are rejected. The raw input
+ * is never echoed so support logs stay free of deployment identifiers that
+ * were never meant to be public.
+ */
+export function validateContractId(contractId: string): void {
+  if (typeof contractId !== 'string' || contractId.trim().length === 0) {
+    throw new ConfigValidationError(
+      'AegisClientConfig.contractId is required.',
+      'MISSING_CONFIG',
+    );
+  }
+
+  if (!StrKey.isValidContract(contractId.trim())) {
+    throw new ConfigValidationError(
+      'Invalid contractId: expected a StrKey-encoded Soroban contract ID.',
+      'INVALID_CONTRACT_ID',
+    );
   }
 }
 
@@ -61,9 +105,14 @@ function validateNetworkPassphrase(networkPassphrase: string): void {
  * values, merging in an environment preset when one is specified.
  */
 export function resolveClientConfig(config: AegisClientConfig): ResolvedAegisConfig {
-  if (!config || typeof config.contractId !== 'string' || config.contractId.length === 0) {
-    throw new ConfigValidationError('AegisClientConfig.contractId is required.', 'MISSING_CONFIG');
+  if (!config || typeof config !== 'object') {
+    throw new ConfigValidationError(
+      'AegisClientConfig is required.',
+      'MISSING_CONFIG',
+    );
   }
+
+  validateContractId(config.contractId);
 
   let rpcUrl: string;
   let networkPassphrase: string;
@@ -72,16 +121,17 @@ export function resolveClientConfig(config: AegisClientConfig): ResolvedAegisCon
     const preset = AEGIS_ENVIRONMENTS[config.environment];
     if (!preset) {
       throw new ConfigValidationError(
-        `Unknown environment "${config.environment}". Valid options: ${Object.keys(AEGIS_ENVIRONMENTS).join(', ')}.`,
-        'MISSING_CONFIG'
+        'Unknown environment. Valid options: testnet, local, mainnet.',
+        'MISSING_CONFIG',
       );
     }
 
-    if (!preset.available && !config.allowMainnet) {
+    // Strict equality — truthy strings like "yes" must not silently unlock mainnet.
+    if (!preset.available && config.allowMainnet !== true) {
       throw new ConfigValidationError(
         `The "${preset.name}" environment is not yet available (${preset.description}). ` +
           'Pass `allowMainnet: true` to opt in explicitly once you understand the risks.',
-        'ENVIRONMENT_UNAVAILABLE'
+        'ENVIRONMENT_UNAVAILABLE',
       );
     }
 
@@ -101,7 +151,7 @@ export function resolveClientConfig(config: AegisClientConfig): ResolvedAegisCon
       throw new ConfigValidationError(
         'AegisClientConfig requires either an "environment" preset (testnet/local/mainnet) ' +
           'or explicit "rpcUrl" and "networkPassphrase" values.',
-        'MISSING_CONFIG'
+        'MISSING_CONFIG',
       );
     }
 
@@ -115,7 +165,7 @@ export function resolveClientConfig(config: AegisClientConfig): ResolvedAegisCon
   return {
     rpcUrl,
     networkPassphrase,
-    contractId: config.contractId,
+    contractId: config.contractId.trim(),
     keypair: config.keypair,
   };
 }

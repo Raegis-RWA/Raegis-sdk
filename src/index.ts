@@ -40,7 +40,31 @@ export {
   NetworkFailureDiagnostic,
   NetworkRecoveryAction,
 } from './diagnostics/network';
-export { resolveClientConfig } from './config/validate';
+export {
+  buildConfigDiagnostic,
+  ConfigDiagnostic,
+  ConfigDiagnosticFeatureFlags,
+  ConfigDiagnosticInput,
+  ConfigDiagnosticIssue,
+  ConfigDiagnosticIssueCode,
+  ConfigDiagnosticRpcSummary,
+  ConfigDiagnosticSigner,
+  ConfigDiagnosticStatus,
+} from './diagnostics/config';
+export {
+  describeNetworkPassphrase,
+  inspectRpcUrl,
+  redactContractId,
+  redactIdentifier,
+  redactRpcUrl,
+  REDACTED,
+} from './security/redaction';
+export {
+  resolveClientConfig,
+  validateContractId,
+  validateNetworkPassphrase,
+  validateRpcUrl,
+} from './config/validate';
 export { AEGIS_ENVIRONMENTS, getEnvironmentPreset } from './config/environments';
 export * from './types/portfolio';
 export * from './errors/portfolio';

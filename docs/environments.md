@@ -80,6 +80,23 @@ const aegis = new AegisClient({
 `ConfigValidationError.code` is one of:
 
 * `MISSING_CONFIG` - `contractId` is missing, or neither `environment` nor `rpcUrl`/`networkPassphrase` were provided.
-* `ENVIRONMENT_UNAVAILABLE` - the requested environment (currently only `mainnet`) is gated and `allowMainnet` was not set.
-* `INVALID_RPC_URL` - the `rpcUrl` is not a valid URL, uses an unsupported protocol, or is an insecure `http://` override outside the `local` preset.
+* `ENVIRONMENT_UNAVAILABLE` - the requested environment (currently only `mainnet`) is gated and `allowMainnet` was not set to the boolean `true`.
+* `INVALID_RPC_URL` - the `rpcUrl` is not a valid URL, uses an unsupported protocol, or is an insecure `http://` override outside the `local` preset. Error messages redact credentials, path, query, and fragment.
 * `INVALID_NETWORK_PASSPHRASE` - the `networkPassphrase` override is empty or not a string.
+* `INVALID_CONTRACT_ID` - `contractId` is not a StrKey-encoded Soroban contract ID (`C...`). Placeholders like `"C..."` are rejected.
+
+## Safe diagnostics for support requests
+
+When you need to share configuration with maintainers, do **not** paste the raw
+config, Keypair, or RPC URL. Use the redacted diagnostic instead:
+
+```typescript
+import { buildConfigDiagnostic } from '@aegis/sdk';
+
+console.log(JSON.stringify(buildConfigDiagnostic(config), null, 2));
+// or, after construction:
+console.log(JSON.stringify(client.diagnoseConfiguration(), null, 2));
+```
+
+See [Configuration diagnostics](./configuration-diagnostics.md) for the full
+field list, redaction rules, and a “never paste” checklist.

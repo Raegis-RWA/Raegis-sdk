@@ -7,6 +7,10 @@ import { EventsModule } from './events/module';
 import { AegisClientConfig, resolveClientConfig } from './config/validate';
 import { classifyNetworkFailure } from './network/failures';
 import {
+  buildConfigDiagnostic,
+  ConfigDiagnostic,
+} from './diagnostics/config';
+import {
   buildNetworkFailureDiagnostic,
   NetworkFailureDiagnostic,
 } from './diagnostics/network';
@@ -26,6 +30,9 @@ export class AegisClient {
   public role: RoleModule;
   public events: EventsModule;
 
+  /** Safe configuration summary captured at construction. Never includes secrets. */
+  private readonly configDiagnostic: ConfigDiagnostic;
+
   /**
    * Initializes the Aegis RWA SDK Client.
    * @param config AegisClientConfig object. Provide either an `environment` preset
@@ -41,6 +48,10 @@ export class AegisClient {
 
     // TODO: Add support for browser-based wallet providers (Freighter/Albedo)
     this.keypair = resolved.keypair;
+
+    // Capture the diagnostic from the original input so environment / allowMainnet
+    // survive even though they are not retained as public fields.
+    this.configDiagnostic = buildConfigDiagnostic(config);
 
     this.compliance = new ComplianceModule(this);
     this.asset = new AssetModule(this);
@@ -77,5 +88,13 @@ export class AegisClient {
    */
   public diagnoseNetworkFailure(error: unknown): NetworkFailureDiagnostic {
     return buildNetworkFailureDiagnostic(error);
+  }
+
+  /**
+   * Returns a frozen, redacted configuration diagnostic safe for GitHub support
+   * requests. Prefer this over logging the client, Keypair, or raw config.
+   */
+  public diagnoseConfiguration(): ConfigDiagnostic {
+    return this.configDiagnostic;
   }
 }

@@ -55,3 +55,4 @@ When you add or change a public method on `ComplianceModule`, `AssetModule`, `In
 - [ ] Anything the source leaves ambiguous, incomplete, or marked with a `// TODO` is called out as an explicit note rather than assumed or omitted.
 - [ ] If the change affects compliance/whitelist-gated behavior, the compliance disclaimer at the top of `docs/api-reference.md` still accurately describes it.
 - [ ] If the change affects contract event decoding, follow the checklist in `docs/contract-events.md` (edge cases, unknown fallback, and security/compliance assumptions).
+- [ ] If the change affects configuration or diagnostics, follow `docs/configuration-diagnostics.md`: outputs must be redacted, tests must assert secrets are absent from `JSON.stringify(diagnostic)`, and docs must explain safe sharing.

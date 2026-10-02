@@ -52,3 +52,11 @@ deeper investigation is required.
 
 Classification is conservative. Unrecognised failures use `UNKNOWN` and are
 not marked retryable.
+
+## Related: configuration diagnostics
+
+For a redacted summary of RPC URL, contract ID, network, feature flags, and
+signer presence (without secrets), see
+[Configuration diagnostics](./configuration-diagnostics.md). Paste
+`diagnoseConfiguration()` / `buildConfigDiagnostic(...)` output into GitHub
+issues instead of raw client or config objects.

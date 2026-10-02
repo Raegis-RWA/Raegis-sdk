@@ -104,6 +104,24 @@ if (event.kind === 'transfer') {
 
 See [Contract Event Decoder](./docs/contract-events.md) for supported topics, unknown fallback behaviour, and dashboard integration guidance.
 
+## Configuration Diagnostics
+
+When asking for support, share a redacted configuration summary — never the raw
+client, Keypair, or RPC URL:
+
+```typescript
+import { buildConfigDiagnostic } from '@aegis/sdk';
+
+// Works even when `new AegisClient(...)` throws:
+console.log(JSON.stringify(buildConfigDiagnostic(config), null, 2));
+
+// Or after a successful construction:
+console.log(JSON.stringify(client.diagnoseConfiguration(), null, 2));
+```
+
+See [Configuration diagnostics](./docs/configuration-diagnostics.md) for what is
+included, what is redacted, and a safe-sharing checklist.
+
 ## Testing
 To run the SDK unit tests locally:
 

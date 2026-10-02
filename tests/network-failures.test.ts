@@ -87,7 +87,7 @@ describe('AegisClient network boundary', () => {
   const client = new AegisClient({
     rpcUrl: 'https://soroban-testnet.stellar.org',
     networkPassphrase: Networks.TESTNET,
-    contractId: 'C...',
+    contractId: 'CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABSC4',
   });
 
   it('turns rejected RPC operations into typed failures', async () => {
