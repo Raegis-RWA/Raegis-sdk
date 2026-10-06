@@ -104,6 +104,34 @@ if (event.kind === 'transfer') {
 
 See [Contract Event Decoder](./docs/contract-events.md) for supported topics, unknown fallback behaviour, and dashboard integration guidance.
 
+## RWA Metadata Validation
+
+Validate versioned off-chain asset metadata before handing it to dashboards,
+indexers, or other SDK consumers:
+
+```typescript
+import { validateRwaMetadata } from '@aegis/sdk';
+
+const result = validateRwaMetadata({
+  schemaVersion: 1,
+  assetId: 'rwa:property:001',
+  name: 'Harbor Street Property',
+  symbol: 'HSP',
+  decimals: 7,
+  issuer: 'GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWHF',
+  metadataUri: 'https://example.com/assets/001.json',
+});
+
+if (!result.ok) {
+  console.error(result.issues);
+}
+```
+
+The validator is strict about schema shape and does not establish issuer
+authority, asset truth, investor eligibility, or legal compliance. See
+[RWA Metadata Validation](./docs/rwa-metadata-validation.md) for the complete
+version-1 schema, failure codes, versioning rules, and security boundary.
+
 ## Testing
 To run the SDK unit tests locally:
 
