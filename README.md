@@ -85,6 +85,37 @@ const capability = await aegis.role.checkCapability('G_USER_PUBLIC_KEY', 'receiv
 console.log('Can receive transfer?', capability.isPermitted);
 ```
 
+## Admin Transaction Previews
+
+Build a deterministic, review-only model for privileged actions before handing
+the action to the application's existing signing and submission path.
+
+```typescript
+import { buildAdminTransactionPreview } from '@aegis/sdk';
+
+const preview = buildAdminTransactionPreview({
+  operation: 'asset-mint',
+  target: {
+    assetId: 'RWA-1',
+    recipient: 'G_RECIPIENT',
+    amount: '125.00',
+  },
+});
+
+console.log(preview.summary);
+console.log(preview.warnings);
+```
+
+Previews cover whitelist changes, asset registration/minting, and role
+grant/revoke actions. They normalize display inputs and surface stable warnings,
+but deliberately remain `reviewOnly: true` and `verified: false`: they do not
+simulate a transaction, prove authorization/compliance, or replace submission-
+time checks.
+
+See [Admin Transaction Preview](./docs/admin-transaction-preview.md) for the
+supported operations, dashboard guidance, stable error codes, and security
+boundaries.
+
 ## Contract Event Decoder
 Decode Soroban contract events into typed audit-trail models for dashboards and indexers.
 

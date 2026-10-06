@@ -34,6 +34,8 @@ export {
   buildAdminTransactionExplorerUrl,
   normalizeAdminActionStatus,
 } from './admin/receipts';
+export { buildAdminTransactionPreview } from './admin/previews';
+export * from './types/admin-preview';
 export { classifyNetworkFailure } from './network/failures';
 export {
   buildNetworkFailureDiagnostic,
