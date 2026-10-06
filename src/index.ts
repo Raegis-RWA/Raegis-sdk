@@ -28,6 +28,13 @@ export {
   normalizeEventTopicName,
 } from './events/topics';
 export { decodeScVal, decodeEventName } from './soroban/scval';
+export { SorobanInvocation } from './soroban/invocation';
+export type {
+  ContractInvocationOperation,
+  SorobanInvocationClient,
+  SorobanWriteResult,
+} from './soroban/invocation';
+export * from './errors/invocation';
 export { parseSorobanResult } from './utils/xdr-parser';
 export {
   buildAdminActionReceipt,

@@ -5,6 +5,7 @@ import { InvestorModule } from './investor/portfolio';
 import { RoleModule } from './role';
 import { EventsModule } from './events/module';
 import { AegisClientConfig, resolveClientConfig } from './config/validate';
+import { SorobanInvocation } from './soroban/invocation';
 import { classifyNetworkFailure } from './network/failures';
 import {
   buildNetworkFailureDiagnostic,
@@ -18,6 +19,7 @@ export class AegisClient {
   public contractId: string;
   public networkPassphrase: string;
   public keypair?: Keypair;
+  public invocation: SorobanInvocation;
 
   // Modules
   public compliance: ComplianceModule;
@@ -41,6 +43,7 @@ export class AegisClient {
 
     // TODO: Add support for browser-based wallet providers (Freighter/Albedo)
     this.keypair = resolved.keypair;
+    this.invocation = new SorobanInvocation(this);
 
     this.compliance = new ComplianceModule(this);
     this.asset = new AssetModule(this);

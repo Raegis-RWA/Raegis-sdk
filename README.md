@@ -61,6 +61,10 @@ See [Role-Aware Client Factory](./docs/role-aware-client-factory.md) for the
 full capability matrix, `compliance-operator` usage, error handling, and
 security notes.
 
+SDK module authors should use the [Typed Contract Invocation](./docs/typed-contract-invocation.md)
+boundary for Soroban reads and writes instead of duplicating simulation,
+signer, preparation, submission, and response-mapping logic.
+
 For direct `AegisClient` construction (advanced / custom setups):
 
 ```typescript

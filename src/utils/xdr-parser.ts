@@ -1,19 +1,24 @@
 import { xdr, scValToNative } from '@stellar/stellar-sdk';
 
 /**
-* Utility function to intercept raw XDR responses from the Soroban RPC
-* and decode them into standard standard JavaScript/TypeScript types.
+* Utility function to decode Soroban RPC results into standard JavaScript/TypeScript types.
 *
-* @param resultXdr - The base64 encoded XDR string returned from an RPC call.
+* The current Stellar SDK returns parsed `xdr.ScVal` objects from successful
+* simulations, while older call sites may still provide base64-encoded XDR.
+*
+* @param result - A parsed ScVal or base64-encoded ScVal.
 * @returns The parsed JavaScript primitive or object.
 */
-export function parseSorobanResult(resultXdr: string): any {
-  if (!resultXdr) {
+export function parseSorobanResult(result: string | xdr.ScVal): any {
+  if (!result) {
     return null;
   }
 
   try {
-    const parsedXdr = xdr.ScVal.fromXDR(resultXdr, 'base64');
+    const parsedXdr =
+      typeof result === 'string'
+        ? xdr.ScVal.fromXDR(result, 'base64')
+        : result;
     return scValToNative(parsedXdr);
   } catch (error) {
     // TODO: Create comprehensive XDR error mapping (translate raw Soroban error codes into readable string messages)

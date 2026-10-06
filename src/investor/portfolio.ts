@@ -1,4 +1,4 @@
-import { Contract, nativeToScVal, rpc } from '@stellar/stellar-sdk';
+import { nativeToScVal, scValToNative, xdr } from '@stellar/stellar-sdk';
 import { AegisClient } from '../client';
 import {
   InvestorPortfolio,
@@ -9,7 +9,6 @@ import {
   TransferEligibility,
 } from '../types/portfolio';
 import { PortfolioError } from '../errors/portfolio';
-import { parseSorobanResult } from '../utils/xdr-parser';
 
 /**
  * Module for querying and processing investor portfolio read models.
@@ -137,23 +136,21 @@ export class InvestorModule {
     isKycApproved: boolean,
     includeMetadata: boolean
   ): Promise<AssetHolding | null> {
-    const contract = new Contract(contractId);
-    const call = contract.call(
+    const call = this.client.invocation.createCallFor(
+      contractId,
       'balance',
-      nativeToScVal(investorAddress, { type: 'address' })
+      nativeToScVal(investorAddress, { type: 'address' }),
     );
 
     let balanceRaw = '0';
 
     try {
-      const result = await this.client.rpcServer.simulateTransaction({
-        transaction: call as any,
-      } as any);
-
-      if (rpc.Api.isSimulationSuccess(result) && result.result) {
-        const parsed = parseSorobanResult(result.result.retval as any);
-        balanceRaw = parsed !== null && parsed !== undefined ? String(parsed) : '0';
-      }
+      const parsed = await this.client.invocation.read<unknown>(
+        call,
+        (retval) => scValToNative(retval as xdr.ScVal),
+        'balance',
+      );
+      balanceRaw = parsed !== null && parsed !== undefined ? String(parsed) : '0';
     } catch {
       balanceRaw = '0';
     }
