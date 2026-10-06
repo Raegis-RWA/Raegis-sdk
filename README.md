@@ -104,6 +104,23 @@ if (event.kind === 'transfer') {
 
 See [Contract Event Decoder](./docs/contract-events.md) for supported topics, unknown fallback behaviour, and dashboard integration guidance.
 
+## Portfolio Asset Metadata
+
+Parse and validate untrusted RWA metadata before using it in dashboards or SDK
+read models:
+
+```typescript
+import { safeParseAssetMetadata } from '@aegis/sdk';
+
+const result = safeParseAssetMetadata(metadataFromApi);
+if (!result.success) {
+  console.error(result.error.issues);
+}
+```
+
+See [Asset Metadata Parser](docs/rwa-asset-metadata.md) for the existing portfolio field contract,
+typed validation errors, and protocol/compliance boundaries.
+
 ## Testing
 To run the SDK unit tests locally:
 
