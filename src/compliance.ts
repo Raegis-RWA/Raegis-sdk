@@ -27,11 +27,12 @@ constructor(client: AegisClient) {
       } as any)
     );
 
-    // rpc.Api.isSimulationSuccess acts as a type guard here
-    // Check for success AND ensure the result object actually exists
+    // rpc.Api.isSimulationSuccess acts as a type guard here.
+    // A failed simulation is not equivalent to an authoritative "false" result.
     if (rpc.Api.isSimulationSuccess(result) && result.result) {
        return parseSorobanResult(result.result.retval as any) as boolean;
     }
-    return false;
+
+    throw new Error('Compliance whitelist query simulation failed.');
   }
 }

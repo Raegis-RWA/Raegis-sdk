@@ -139,8 +139,11 @@ export interface AegisComplianceOperatorClient extends AegisInvestorClient {
  * Available for: `issuer`, `admin`.
  */
 export interface AegisIssuerClient extends AegisInvestorClient {
-  /** Asset module — mint and transfer operations available. */
-  readonly asset: Pick<AssetModule, 'mint' | 'transfer'>;
+  /** Asset module — readiness-gated mint and transfer operations available. */
+  readonly asset: Pick<
+    AssetModule,
+    'checkMintReadiness' | 'mint' | 'mintWhenReady' | 'transfer'
+  >;
 }
 
 /**
@@ -301,8 +304,8 @@ export function createComplianceOperatorClient(
 /**
  * Creates an issuer client with asset minting capability.
  *
- * Exposes `asset.mint()` and `asset.transfer()` in addition to the read-only
- * surface. Whitelist management and privileged admin operations throw
+ * Exposes readiness review, guarded minting, low-level minting, and transfer
+ * operations. Whitelist management and privileged admin operations throw
  * `RoleCapabilityError`.
  *
  * @example
@@ -312,7 +315,14 @@ export function createComplianceOperatorClient(
  *   contractId: 'C...',
  *   keypair: Keypair.fromSecret('S...'),
  * });
- * await aegis.asset.mint('G_INVESTOR', 1000);
+ * const readiness = await aegis.asset.checkMintReadiness(
+ *   'G_INVESTOR',
+ *   1000,
+ *   probes,
+ * );
+ * if (readiness.ready) {
+ *   await aegis.asset.mintWhenReady('G_INVESTOR', 1000, probes);
+ * }
  * ```
  */
 export function createIssuerClient(
@@ -325,9 +335,17 @@ export function createIssuerClient(
   return {
     ...base,
     asset: {
+      checkMintReadiness: (...args) => {
+        assertCapability(capabilities, 'canMint', 'mint readiness');
+        return client.asset.checkMintReadiness(...args);
+      },
       mint: (...args) => {
         assertCapability(capabilities, 'canMint', 'mint');
         return client.asset.mint(...args);
+      },
+      mintWhenReady: (...args) => {
+        assertCapability(capabilities, 'canMint', 'mint when ready');
+        return client.asset.mintWhenReady(...args);
       },
       transfer: (...args) => {
         assertCapability(capabilities, 'canTransfer', 'transfer');
@@ -351,7 +369,7 @@ export function createIssuerClient(
  *   keypair: Keypair.fromSecret('S...'),
  * });
  * aegis.assertAdminAccess();
- * await aegis.asset.mint('G_INVESTOR', 5000);
+ * await aegis.asset.mintWhenReady('G_INVESTOR', 5000, probes);
  * ```
  */
 export function createAdminClient(config: SignerClientConfig): AegisAdminClient {
