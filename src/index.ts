@@ -40,6 +40,7 @@ export {
   NetworkFailureDiagnostic,
   NetworkRecoveryAction,
 } from './diagnostics/network';
+export * from './diagnostics/transfer';
 export { resolveClientConfig } from './config/validate';
 export { AEGIS_ENVIRONMENTS, getEnvironmentPreset } from './config/environments';
 export * from './types/portfolio';

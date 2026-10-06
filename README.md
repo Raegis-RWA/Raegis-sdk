@@ -104,6 +104,13 @@ if (event.kind === 'transfer') {
 
 See [Contract Event Decoder](./docs/contract-events.md) for supported topics, unknown fallback behaviour, and dashboard integration guidance.
 
+## Transfer Restriction Diagnostics
+
+Use `diagnoseTransferRestrictions()` for fail-closed preflight guidance over observable amount, signer, and protocol-whitelist state. Supply whitelist state explicitly as `whitelisted`, `not-whitelisted`, `unknown`, or `unavailable`; ambiguous reads should remain unknown/unavailable rather than being converted into a definitive restriction.
+
+A `ready` result means only that the supplied SDK-side preflight signals did not identify a restriction. Contract authorization and transaction execution remain separate boundaries.
+
+
 ## Testing
 To run the SDK unit tests locally:
 
