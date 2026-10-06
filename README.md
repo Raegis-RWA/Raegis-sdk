@@ -14,6 +14,10 @@ Use the role-aware factory to construct a client with explicit capability
 intent. The returned object only exposes modules and operations that are
 appropriate for the declared role.
 
+Signer examples below assume **server-only** environment variables. Never expose
+signer secrets through browser-public environment variables or commit them to
+source control.
+
 ```typescript
 import {
   createReadOnlyClient,
@@ -35,7 +39,7 @@ const portfolio  = await reader.investor.getPortfolio('G_USER_PUBLIC_KEY');
 const investor = createInvestorClient({
   environment: 'testnet',
   contractId: 'C_YOUR_CONTRACT_ID',
-  keypair: Keypair.fromSecret('S_INVESTOR_SECRET'),
+  keypair: Keypair.fromSecret(process.env.RAEGIS_INVESTOR_SECRET!),
 });
 await investor.asset.transfer('G_RECIPIENT', 100);
 
@@ -43,7 +47,7 @@ await investor.asset.transfer('G_RECIPIENT', 100);
 const issuer = createIssuerClient({
   environment: 'testnet',
   contractId: 'C_YOUR_CONTRACT_ID',
-  keypair: Keypair.fromSecret('S_ISSUER_SECRET'),
+  keypair: Keypair.fromSecret(process.env.RAEGIS_ISSUER_SECRET!),
 });
 await issuer.asset.mint('G_INVESTOR', 5000);
 
@@ -51,7 +55,7 @@ await issuer.asset.mint('G_INVESTOR', 5000);
 const admin = createAdminClient({
   environment: 'testnet',
   contractId: 'C_YOUR_CONTRACT_ID',
-  keypair: Keypair.fromSecret('S_ADMIN_SECRET'),
+  keypair: Keypair.fromSecret(process.env.RAEGIS_ADMIN_SECRET!),
 });
 admin.assertAdminAccess(); // explicit guard before privileged call
 await admin.asset.mint('G_INVESTOR', 10000);
@@ -60,6 +64,7 @@ await admin.asset.mint('G_INVESTOR', 10000);
 See [Role-Aware Client Factory](./docs/role-aware-client-factory.md) for the
 full capability matrix, `compliance-operator` usage, error handling, and
 security notes.
+For support output and diagnostic handling, see [Safe Logging](./docs/safe-logging.md).
 
 For direct `AegisClient` construction (advanced / custom setups):
 
@@ -69,7 +74,7 @@ import { AegisClient } from '@aegis/sdk';
 const aegis = new AegisClient({
   environment: 'testnet',
   contractId: 'C_YOUR_CONTRACT_ID',
-  keypair: Keypair.fromSecret('S...'), // optional for read-only
+  keypair: Keypair.fromSecret(process.env.RAEGIS_SIGNER_SECRET!), // optional for read-only
 });
 ```
 

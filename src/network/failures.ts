@@ -1,4 +1,5 @@
 import { NetworkFailure, NetworkFailureCode } from '../errors/network';
+import { redactSensitiveValue } from '../security/redaction';
 
 const SAFE_MESSAGES: Readonly<Record<NetworkFailureCode, string>> = {
   TIMEOUT: 'The network request timed out.',
@@ -114,7 +115,7 @@ function createFailure(
     code,
     RETRYABLE_CODES.has(code),
     {
-      cause,
+      cause: redactSensitiveValue(cause),
       ...(retryAfterSeconds !== undefined ? { retryAfterSeconds } : {}),
     },
   );

@@ -1,5 +1,6 @@
 import { Contract, nativeToScVal, TransactionBuilder, Account } from '@stellar/stellar-sdk';
 import { AegisClient } from './client';
+import { redactSensitiveText } from './security/redaction';
 
 export class AssetModule {
 private client: AegisClient;
@@ -43,7 +44,7 @@ constructor(client: AegisClient) {
       const response = await this.client.rpcServer.sendTransaction(tx);
       return response.hash;
     } catch (error) {
-      throw new Error(`Mint transaction failed: ${error}`);
+      throw new Error(`Mint transaction failed: ${safeFailureMessage(error)}`);
     }
   }
 
@@ -80,7 +81,12 @@ constructor(client: AegisClient) {
       return response.hash;
     } catch (error) {
       // TODO: Improve error typing for unauthorized transfer attempts
-      throw new Error(`Transfer transaction failed: ${error}`);
+      throw new Error(`Transfer transaction failed: ${safeFailureMessage(error)}`);
     }
   }
+}
+
+function safeFailureMessage(error: unknown): string {
+  const message = error instanceof Error ? error.message : String(error);
+  return redactSensitiveText(message);
 }

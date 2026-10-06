@@ -36,6 +36,12 @@ export {
 } from './admin/receipts';
 export { classifyNetworkFailure } from './network/failures';
 export {
+  REDACTED_VALUE,
+  redactSensitiveText,
+  redactSensitiveValue,
+} from './security/redaction';
+export type { RedactedValue } from './security/redaction';
+export {
   buildNetworkFailureDiagnostic,
   NetworkFailureDiagnostic,
   NetworkRecoveryAction,

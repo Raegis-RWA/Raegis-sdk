@@ -237,7 +237,7 @@ export function createReadOnlyClient(
  * const aegis = createInvestorClient({
  *   environment: 'testnet',
  *   contractId: 'C...',
- *   keypair: Keypair.fromSecret('S...'),
+ *   keypair: Keypair.fromSecret(process.env.RAEGIS_SIGNER_SECRET!),
  * });
  * await aegis.asset.transfer('G_RECIPIENT', 100);
  * ```
@@ -271,7 +271,7 @@ export function createInvestorClient(
  * const aegis = createComplianceOperatorClient({
  *   environment: 'testnet',
  *   contractId: 'C...',
- *   keypair: Keypair.fromSecret('S...'),
+ *   keypair: Keypair.fromSecret(process.env.RAEGIS_SIGNER_SECRET!),
  * });
  * aegis.assertWhitelistAccess(); // confirms role before calling contract
  * await aegis.compliance.checkWhitelist('G...');
@@ -310,7 +310,7 @@ export function createComplianceOperatorClient(
  * const aegis = createIssuerClient({
  *   environment: 'testnet',
  *   contractId: 'C...',
- *   keypair: Keypair.fromSecret('S...'),
+ *   keypair: Keypair.fromSecret(process.env.RAEGIS_SIGNER_SECRET!),
  * });
  * await aegis.asset.mint('G_INVESTOR', 1000);
  * ```
@@ -348,7 +348,7 @@ export function createIssuerClient(
  * const aegis = createAdminClient({
  *   environment: 'testnet',
  *   contractId: 'C...',
- *   keypair: Keypair.fromSecret('S...'),
+ *   keypair: Keypair.fromSecret(process.env.RAEGIS_SIGNER_SECRET!),
  * });
  * aegis.assertAdminAccess();
  * await aegis.asset.mint('G_INVESTOR', 5000);
