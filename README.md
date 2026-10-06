@@ -61,6 +61,8 @@ See [Role-Aware Client Factory](./docs/role-aware-client-factory.md) for the
 full capability matrix, `compliance-operator` usage, error handling, and
 security notes.
 
+For browser-wallet signing, see [Freighter Wallet Adapter](./docs/freighter-wallet-adapter.md) for the typed access/signing boundary, failure codes, signer checks, and the separation between wallet signatures and protocol/legal authorization.
+
 For direct `AegisClient` construction (advanced / custom setups):
 
 ```typescript

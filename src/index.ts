@@ -35,6 +35,7 @@ export {
   normalizeAdminActionStatus,
 } from './admin/receipts';
 export { classifyNetworkFailure } from './network/failures';
+export * from './wallet/freighter';
 export {
   buildNetworkFailureDiagnostic,
   NetworkFailureDiagnostic,
