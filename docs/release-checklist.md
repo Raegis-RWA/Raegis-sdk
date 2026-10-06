@@ -24,7 +24,7 @@
 
 ### 1.3 Compatibility
 
-- [ ] List contract version compatibility (`requires pocketpay-contracts >= 2.1.x`).
+- [ ] Review the [SDK / Aegis Contract Compatibility Matrix](contract-compatibility-matrix.md) against the deployed Aegis contract commit/spec; update the source pin and mapped dependencies whenever they change.
 - [ ] List Soroban/SDK version compatibility (`requires soroban-sdk >= 20.0.0`).
 - [ ] List dashboard compatibility (`compatible with aegis-dashboard >= 1.0.x`).
 - [ ] Note any TypeScript / Node.js minimum version changes.

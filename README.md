@@ -104,6 +104,8 @@ if (event.kind === 'transfer') {
 
 See [Contract Event Decoder](./docs/contract-events.md) for supported topics, unknown fallback behaviour, and dashboard integration guidance.
 
+See [Contract Compatibility Matrix](./docs/contract-compatibility-matrix.md) for SDK-to-contract method, event, error, and release compatibility.
+
 ## Testing
 To run the SDK unit tests locally:
 
