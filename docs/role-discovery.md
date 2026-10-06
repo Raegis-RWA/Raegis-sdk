@@ -10,21 +10,24 @@ behalf.
 The Aegis Soroban contract does not currently expose a role query function (no
 `get_role`, `is_admin`, or similar). Everything `RoleModule` reports is derived from:
 
-* **On-chain KYC/whitelist status**, via `ComplianceModule.checkWhitelist()`.
+* **Whitelist approval evidence**, via `ComplianceModule.checkWhitelist()`. The current Boolean helper is fail-closed: some unsuccessful or missing-result simulations also return `false`.
 * **Local signer configuration**, i.e. whether the `AegisClient` was constructed with
   a `Keypair` matching the address in question.
 
 This makes `RoleModule` a **developer-experience and dashboard-gating convenience** —
-useful for deciding what UI to show (e.g. a "Mint" button, a "not whitelisted" banner).
+useful for deciding what UI to show (e.g. a "Mint" button or a "whitelist approval not established" banner).
 It is **not** on-chain authorization, is **not** legal, financial, or compliance
 advice, and must **never** be used as the sole check before submitting a
 state-changing transaction. The contract itself is always the final authority on
 whether a transaction is actually permitted to succeed — always simulate/submit
 through `AssetModule` and handle rejection, regardless of what `RoleModule` reports.
 
+For the wider responsibility boundary across whitelist state, role predictions,
+contract events, receipts, dashboard presentation, and off-chain policy decisions,
+see [Compliance and legal boundaries](./compliance-boundaries.md).
+
 Because of this, `admin` and `issuer` roles cannot currently be discovered — only
-`investor` (whitelisted), `unauthorized` (not whitelisted), and `unknown` (address
-invalid or the compliance query failed) are distinguishable today. Admin/issuer
+`investor` (whitelist approval established), `unauthorized` (the Boolean whitelist helper returned `false`), and `unknown` (address invalid or a whitelist query threw) are distinguishable today. Because `checkWhitelist()` also returns `false` for some unsuccessful/missing-result simulations, `unauthorized` is fail-closed and is not proof that the contract explicitly returned a negative whitelist result. Admin/issuer
 discovery is a natural extension once the contract exposes a role query; `RoleModule`
 is structured so that can be added without changing its public shape.
 
@@ -74,8 +77,8 @@ export interface RoleDiscoveryResult {
 | `role` | Meaning |
 | :--- | :--- |
 | `investor` | Address is KYC/whitelist approved. |
-| `unauthorized` | Address is not KYC/whitelist approved. |
-| `unknown` | Address was invalid, or the whitelist RPC query failed — see `reason`. |
+| `unauthorized` | Whitelist approval was not established by the current helper. This can represent an explicit negative result or a fail-closed simulation result. |
+| `unknown` | Address was invalid, or a whitelist query threw and reached RoleModule's error path — see `reason`. Some unsuccessful/missing-result simulations are instead collapsed to `unauthorized` by the current Boolean helper. |
 
 ## Capability Checks
 
@@ -122,6 +125,7 @@ export interface CapabilityCheckResult {
 | :--- | :--- |
 | Empty or non-string address | Returns immediately with `code: 'INVALID_ADDRESS'`; no RPC call is made. |
 | Whitelist RPC call throws | Returns safely with `code: 'COMPLIANCE_QUERY_FAILED'` and the underlying error message in `reason`. The module never throws for this case — consistent with `InvestorModule`'s safe-fallback pattern. |
+| Whitelist simulation is unsuccessful or has no result | `ComplianceModule.checkWhitelist()` currently returns `false`, so role discovery becomes `unauthorized` / capability checks become `NOT_WHITELISTED`. Treat this as approval not established rather than proof of an explicit negative contract result. |
 | No signer configured on the client | `initiate_transfer` and `mint_asset` return `code: 'NO_SIGNER_CONFIGURED'`. |
 | Signer configured for a *different* address than the one being checked | `hasLocalSigner` / the signer-dependent checks resolve to `false`, since the module checks that the client's keypair matches the specific address being evaluated, not just that a keypair exists. |
 
