@@ -57,9 +57,11 @@ admin.assertAdminAccess(); // explicit guard before privileged call
 await admin.asset.mint('G_INVESTOR', 10000);
 ```
 
-See [Role-Aware Client Factory](./docs/role-aware-client-factory.md) for the
-full capability matrix, `compliance-operator` usage, error handling, and
-security notes.
+See [SDK Role & Permission Model](./docs/role-permission-model.md) for the
+signer requirements, current operation matrix, expected unauthorized failures,
+and the boundary between SDK guardrails and contract authorization. See
+[Role-Aware Client Factory](./docs/role-aware-client-factory.md) for construction
+and typed capability details.
 
 For direct `AegisClient` construction (advanced / custom setups):
 
