@@ -29,6 +29,7 @@ export {
 } from './events/topics';
 export { decodeScVal, decodeEventName } from './soroban/scval';
 export { parseSorobanResult } from './utils/xdr-parser';
+export * from './utils/pagination';
 export {
   buildAdminActionReceipt,
   buildAdminTransactionExplorerUrl,
@@ -43,7 +44,9 @@ export {
 export { resolveClientConfig } from './config/validate';
 export { AEGIS_ENVIRONMENTS, getEnvironmentPreset } from './config/environments';
 export * from './types/portfolio';
+export * from './types/pagination';
 export * from './errors/portfolio';
+export * from './errors/pagination';
 export * from './types/role';
 export * from './errors/role';
 export * from './types/admin-receipt';

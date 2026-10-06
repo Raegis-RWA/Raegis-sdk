@@ -8,7 +8,9 @@ import {
   FetchPortfolioOptions,
   TransferEligibility,
 } from '../types/portfolio';
+import { PaginatedResult, PaginationRequest } from '../types/pagination';
 import { PortfolioError } from '../errors/portfolio';
+import { paginateArray } from '../utils/pagination';
 import { parseSorobanResult } from '../utils/xdr-parser';
 
 /**
@@ -19,6 +21,17 @@ export class InvestorModule {
 
   constructor(client: AegisClient) {
     this.client = client;
+  }
+
+  /**
+   * Returns a stable page over the holdings in an already-fetched portfolio.
+   * The returned cursor is opaque and may be passed back in the next request.
+   */
+  public paginateHoldings(
+    portfolio: InvestorPortfolio,
+    request: PaginationRequest = {}
+  ): PaginatedResult<AssetHolding> {
+    return paginateArray(portfolio.holdings, request);
   }
 
   /**

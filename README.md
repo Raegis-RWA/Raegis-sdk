@@ -104,6 +104,15 @@ if (event.kind === 'transfer') {
 
 See [Contract Event Decoder](./docs/contract-events.md) for supported topics, unknown fallback behaviour, and dashboard integration guidance.
 
+## Typed Pagination
+Read-heavy SDK modules share validated cursor and limit types, explicit continuation
+states, and a deterministic holdings view for an already-fetched portfolio. Event
+reads preserve an explicit `unknown` continuation when Soroban RPC provides a
+resumable cursor without proving that another item exists.
+
+See [Typed Pagination](./docs/pagination.md) for cursor assumptions, limits,
+continuation handling, and Events and Investor examples.
+
 ## Testing
 To run the SDK unit tests locally:
 
