@@ -40,6 +40,8 @@ export {
   NetworkFailureDiagnostic,
   NetworkRecoveryAction,
 } from './diagnostics/network';
+export * from './transactions/simulation';
+export * from './errors/simulation';
 export { resolveClientConfig } from './config/validate';
 export { AEGIS_ENVIRONMENTS, getEnvironmentPreset } from './config/environments';
 export * from './types/portfolio';
@@ -51,5 +53,8 @@ export * from './errors/network';
 export * from './errors/config';
 export * from './types/contract-event';
 export * from './errors/event';
-export type { AegisEnvironmentName, AegisEnvironmentPreset } from './config/environments';
+export type {
+  AegisEnvironmentName,
+  AegisEnvironmentPreset,
+} from './config/environments';
 export type { ResolvedAegisConfig } from './config/validate';

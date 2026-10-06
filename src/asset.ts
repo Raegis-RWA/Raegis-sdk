@@ -1,10 +1,17 @@
-import { Contract, nativeToScVal, TransactionBuilder, Account } from '@stellar/stellar-sdk';
+import {
+  Account,
+  Contract,
+  nativeToScVal,
+  TransactionBuilder,
+} from '@stellar/stellar-sdk';
 import { AegisClient } from './client';
+import { TransactionSimulationError } from './errors/simulation';
+import { simulateTransactionReadiness } from './transactions/simulation';
 
 export class AssetModule {
-private client: AegisClient;
+  private client: AegisClient;
 
-constructor(client: AegisClient) {
+  constructor(client: AegisClient) {
     this.client = client;
   }
 
@@ -21,21 +28,28 @@ constructor(client: AegisClient) {
       'mint_asset',
       nativeToScVal(signer.publicKey(), { type: 'address' }),
       nativeToScVal(to, { type: 'address' }),
-      nativeToScVal(amount, { type: 'i128' })
+      nativeToScVal(amount, { type: 'i128' }),
     );
 
-    // TODO: Implement transaction simulation endpoint before submitting to check for auth/whitelist failures
-
-    // Note: In production, you must fetch the real sequence number for the account
-    const sourceAccount = new Account(signer.publicKey(), "0");
+    // Note: In production, fetch the real sequence number for the account.
+    const sourceAccount = new Account(signer.publicKey(), '0');
 
     const tx = new TransactionBuilder(sourceAccount, {
-      fee: "1000",
+      fee: '1000',
       networkPassphrase: this.client.networkPassphrase,
     })
-    .addOperation(call)
-    .setTimeout(30)
-    .build();
+      .addOperation(call)
+      .setTimeout(30)
+      .build();
+
+    const readiness = await simulateTransactionReadiness(
+      this.client.rpcServer,
+      tx,
+      'mint',
+    );
+    if (!readiness.ready) {
+      throw new TransactionSimulationError(readiness);
+    }
 
     tx.sign(signer);
 
@@ -60,18 +74,27 @@ constructor(client: AegisClient) {
       'transfer',
       nativeToScVal(signer.publicKey(), { type: 'address' }),
       nativeToScVal(to, { type: 'address' }),
-      nativeToScVal(amount, { type: 'i128' })
+      nativeToScVal(amount, { type: 'i128' }),
     );
 
-    const sourceAccount = new Account(signer.publicKey(), "0");
+    const sourceAccount = new Account(signer.publicKey(), '0');
 
     const tx = new TransactionBuilder(sourceAccount, {
-      fee: "1000",
+      fee: '1000',
       networkPassphrase: this.client.networkPassphrase,
     })
-    .addOperation(call)
-    .setTimeout(30)
-    .build();
+      .addOperation(call)
+      .setTimeout(30)
+      .build();
+
+    const readiness = await simulateTransactionReadiness(
+      this.client.rpcServer,
+      tx,
+      'transfer',
+    );
+    if (!readiness.ready) {
+      throw new TransactionSimulationError(readiness);
+    }
 
     tx.sign(signer);
 
@@ -79,7 +102,6 @@ constructor(client: AegisClient) {
       const response = await this.client.rpcServer.sendTransaction(tx);
       return response.hash;
     } catch (error) {
-      // TODO: Improve error typing for unauthorized transfer attempts
       throw new Error(`Transfer transaction failed: ${error}`);
     }
   }

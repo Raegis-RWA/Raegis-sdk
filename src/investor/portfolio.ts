@@ -9,6 +9,10 @@ import {
   TransferEligibility,
 } from '../types/portfolio';
 import { PortfolioError } from '../errors/portfolio';
+import {
+  mapSimulationReadiness,
+  SimulationReadiness,
+} from '../transactions/simulation';
 import { parseSorobanResult } from '../utils/xdr-parser';
 
 /**
@@ -19,6 +23,22 @@ export class InvestorModule {
 
   constructor(client: AegisClient) {
     this.client = client;
+  }
+
+  /**
+   * Returns the typed readiness state for a portfolio balance simulation.
+   * Transport failures are collapsed to a stable failed result.
+   */
+  public async checkPortfolioReadiness(
+    investorAddress: string,
+    contractId: string = this.client.contractId
+  ): Promise<SimulationReadiness> {
+    try {
+      const result = await this.simulateAssetBalance(contractId, investorAddress);
+      return mapSimulationReadiness(result, 'portfolio');
+    } catch {
+      return mapSimulationReadiness({ error: 'transport failure' }, 'portfolio');
+    }
   }
 
   /**
@@ -137,18 +157,14 @@ export class InvestorModule {
     isKycApproved: boolean,
     includeMetadata: boolean
   ): Promise<AssetHolding | null> {
-    const contract = new Contract(contractId);
-    const call = contract.call(
-      'balance',
-      nativeToScVal(investorAddress, { type: 'address' })
-    );
-
     let balanceRaw = '0';
 
     try {
-      const result = await this.client.rpcServer.simulateTransaction({
-        transaction: call as any,
-      } as any);
+      const result = await this.simulateAssetBalance(contractId, investorAddress);
+      const readiness = mapSimulationReadiness(result, 'portfolio');
+      if (!readiness.ready) {
+        throw new PortfolioError(readiness.message, 'RPC_FAILURE');
+      }
 
       if (rpc.Api.isSimulationSuccess(result) && result.result) {
         const parsed = parseSorobanResult(result.result.retval as any);
@@ -193,6 +209,21 @@ export class InvestorModule {
       isCompliant: isKycApproved,
       transferEligibility,
     };
+  }
+
+  private async simulateAssetBalance(
+    contractId: string,
+    investorAddress: string
+  ) {
+    const contract = new Contract(contractId);
+    const call = contract.call(
+      'balance',
+      nativeToScVal(investorAddress, { type: 'address' })
+    );
+
+    return this.client.rpcServer.simulateTransaction({
+      transaction: call as any,
+    } as any);
   }
 
   /**
