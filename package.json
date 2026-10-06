@@ -17,9 +17,10 @@
   "scripts": {
     "build": "tsc",
     "test": "jest",
+    "test:smoke": "node scripts/package-smoke.mjs",
     "test:compat": "node scripts/check-compat.mjs",
-    "check": "npm run build && npm test -- --runInBand && npm run test:compat",
-    "verify": "npm run lint && npm run format && npm run build && npm test -- --runInBand && npm run test:compat",
+    "check": "npm run build && npm run test:smoke && npm test -- --runInBand && npm run test:compat",
+    "verify": "npm run lint && npm run format && npm run build && npm run test:smoke && npm test -- --runInBand && npm run test:compat",
     "lint": "eslint src --ext .ts",
     "format": "prettier --write \"src/**/*.ts\"",
     "prepare": "npm run build"
