@@ -150,3 +150,5 @@ PRs submitted to this repository are reviewed against our [Pull Request Reviewer
 ### Acceptance Criteria Traceability
 Every PR **must** include an [acceptance criteria traceability table](docs/acceptance-criteria-traceability.md) that maps SDK modules, tests, docs, and behaviour verification to each acceptance criterion from the linked issue. This makes evaluation straightforward for maintainers and GrantFox reviewers.
 
+During GrantFox payment evaluation periods, follow the [Payment-Period Conduct](docs/payment-period-conduct.md) guide for self-review, communication expectations, and the evaluation process.
+
