@@ -2,6 +2,10 @@
 
 We welcome open-source contributions! As middleware, this SDK is critical for the frontend developer experience.
 
+Before opening a PR, see the [Evaluation-Readiness Index](docs/evaluation-readiness-index.md),
+which links every payment, testing, CI, acceptance-criteria, self-assessment,
+reviewer, and communication doc from one page.
+
 ## Development Workflow
 1. **Fork & Clone:** Fork the repo and clone it locally.
 2. **Install Dependencies:** Run `npm install`.
