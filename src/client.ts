@@ -5,6 +5,7 @@ import { InvestorModule } from './investor/portfolio';
 import { RoleModule } from './role';
 import { EventsModule } from './events/module';
 import { AegisClientConfig, resolveClientConfig } from './config/validate';
+import { RoleCapabilityError } from './errors/client-factory';
 import { classifyNetworkFailure } from './network/failures';
 import {
   buildNetworkFailureDiagnostic,
@@ -51,10 +52,19 @@ export class AegisClient {
 
   /**
    * Helper to verify the client is configured for write operations.
+   *
+   * An unkeyed direct AegisClient is treated as read-only for the typed
+   * capability error surface. Role-aware signer factories already require a
+   * keypair at the TypeScript boundary.
    */
   public requireSigner(): Keypair {
     if (!this.keypair) {
-      throw new Error("Transaction signing requires a Keypair to be configured on the AegisClient.");
+      throw new RoleCapabilityError(
+        'Transaction signing requires a Keypair to be configured on the AegisClient.',
+        'SIGNER_REQUIRED',
+        'read-only',
+        'transaction signing',
+      );
     }
     return this.keypair;
   }
@@ -62,9 +72,7 @@ export class AegisClient {
   /**
    * Runs an SDK network operation behind the stable network-failure boundary.
    */
-  public async runNetworkOperation<T>(
-    operation: () => Promise<T>
-  ): Promise<T> {
+  public async runNetworkOperation<T>(operation: () => Promise<T>): Promise<T> {
     try {
       return await operation();
     } catch (error) {
