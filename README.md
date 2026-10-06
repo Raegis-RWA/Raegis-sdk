@@ -104,6 +104,12 @@ if (event.kind === 'transfer') {
 
 See [Contract Event Decoder](./docs/contract-events.md) for supported topics, unknown fallback behaviour, and dashboard integration guidance.
 
+## Asset Registry Cache Policy
+Applications that cache asset-registry reads can use the SDK's explicit cache
+scope and freshness helpers while keeping storage and TTL policy in the
+application. See [Asset Registry Cache Policy](./docs/asset-registry-cache.md)
+for invalidation rules and dashboard guidance.
+
 ## Testing
 To run the SDK unit tests locally:
 

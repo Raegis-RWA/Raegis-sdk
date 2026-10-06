@@ -50,6 +50,7 @@ export * from './types/admin-receipt';
 export * from './errors/network';
 export * from './errors/config';
 export * from './types/contract-event';
+export * from './types/asset-registry-cache';
 export * from './errors/event';
 export type { AegisEnvironmentName, AegisEnvironmentPreset } from './config/environments';
 export type { ResolvedAegisConfig } from './config/validate';
