@@ -104,6 +104,10 @@ if (event.kind === 'transfer') {
 
 See [Contract Event Decoder](./docs/contract-events.md) for supported topics, unknown fallback behaviour, and dashboard integration guidance.
 
+## Architecture & Security Readiness
+
+See the [Architecture and Security Readiness Review](./docs/architecture-readiness-review.md) for the current production-readiness assessment, security gaps, missing test coverage, public API risks, dashboard integration risks, and prioritized follow-up work.
+
 ## Testing
 To run the SDK unit tests locally:
 
@@ -149,4 +153,3 @@ PRs submitted to this repository are reviewed against our [Pull Request Reviewer
 
 ### Acceptance Criteria Traceability
 Every PR **must** include an [acceptance criteria traceability table](docs/acceptance-criteria-traceability.md) that maps SDK modules, tests, docs, and behaviour verification to each acceptance criterion from the linked issue. This makes evaluation straightforward for maintainers and GrantFox reviewers.
-
