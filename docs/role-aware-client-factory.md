@@ -19,8 +19,10 @@ The role-aware factory addresses this by:
 
 - Accepting a keypair **only** for roles that require one.
 - Returning a typed surface where **unpermitted methods simply do not exist**.
-- Providing explicit guard methods (`assertAdminAccess`, `assertWhitelistAccess`)
-  that throw a typed `RoleCapabilityError` if the role is wrong.
+- Providing a runtime `assertCapability()` guard for dynamic dispatch and
+  explicit `.client` escape-hatch usage, plus the convenience guards
+  `assertAdminAccess()` and `assertWhitelistAccess()`. Denied checks throw a
+  typed `RoleCapabilityError`.
 
 ---
 
@@ -33,6 +35,25 @@ The role-aware factory addresses this by:
 | `compliance-operator` | ✓    | ✓    | ✓        |      | ✓                |           |
 | `issuer`              | ✓    | ✓    | ✓        | ✓    |                  |           |
 | `admin`               | ✓    | ✓    | ✓        | ✓    | ✓                | ✓         |
+
+---
+
+## Runtime capability guard
+
+Every role-aware client exposes `assertCapability(flag, operation?)`. Use it
+when the operation is selected dynamically or when code intentionally drops
+down to the unrestricted `.client` escape hatch.
+
+```ts
+const investor = createInvestorClient({ ...config, keypair });
+
+investor.assertCapability('canTransfer', 'transfer'); // allowed
+investor.assertCapability('canMint', 'mint'); // throws RoleCapabilityError
+```
+
+A denied guard reports `OPERATION_NOT_PERMITTED` together with the declared
+role and operation name. This is an SDK-side preflight guard only; the contract
+remains the authorization authority.
 
 ---
 
@@ -218,8 +239,12 @@ actually permitted.
 ## Accessing the underlying client
 
 Every factory returns an object with a `.client` property that exposes the full
-`AegisClient` instance. Use this when you need to call methods not surfaced on
-the typed role client (e.g. `diagnoseNetworkFailure`, `runNetworkOperation`).
+`AegisClient` instance. This is an intentional escape hatch and is **not**
+narrowed by the role-aware TypeScript surface. Before using it for a
+state-changing operation, call `assertCapability()` for the required capability;
+contract-side authorization still remains authoritative. Prefer `.client` for
+cross-cutting helpers such as `diagnoseNetworkFailure` and
+`runNetworkOperation`.
 
 ```ts
 const aegis = createReadOnlyClient({ ... });

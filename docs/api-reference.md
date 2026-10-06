@@ -177,6 +177,46 @@ for the full security note.
 * `getCapabilityMatrix(address: string): Promise<CapabilityMatrix>`
   Evaluates all known capabilities for an address in one call.
 
+## Role-aware client factory
+
+The role-aware factories narrow the SDK surface for `read-only`, `investor`,
+`compliance-operator`, `issuer`, and `admin` callers. See
+[Role-Aware Client Factory](./role-aware-client-factory.md) for the full
+capability matrix and security boundary.
+
+### `assertCapability(flag, operation?): void`
+
+Available on every role-aware client returned by `createReadOnlyClient`,
+`createInvestorClient`, `createComplianceOperatorClient`,
+`createIssuerClient`, and `createAdminClient`.
+
+**Signature**
+```typescript
+assertCapability(
+  flag: keyof Omit<RoleCapabilities, 'role'>,
+  operation?: string,
+): void
+```
+
+**Parameters**
+* `flag`: Capability to require, such as `canRead`, `canTransfer`,
+  `canMint`, `canManageWhitelist`, or `canAdminister`.
+* `operation` (optional): Human-readable operation name included in a denial.
+  Defaults to the capability flag.
+
+**Returns**
+`void` when the declared role includes the requested capability.
+
+**Errors**
+Throws `RoleCapabilityError` with code `OPERATION_NOT_PERMITTED`, plus the
+declared `role` and requested `operation`, when the capability is not granted.
+
+> **Security boundary:** This is an SDK-side preflight check over the role
+> declared when the client was created. It does not verify an on-chain role and
+> does not replace contract authorization. The `.client` property exposes the
+> unrestricted underlying `AegisClient`; callers using that escape hatch for
+> state-changing work should call this guard first.
+
 ## `EventsModule` & event decoder
 
 Typed Soroban contract event decoding for audit trails. See [Contract Event Decoder Documentation](./contract-events.md).

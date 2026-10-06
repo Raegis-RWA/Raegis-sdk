@@ -341,35 +341,39 @@ describe('capability guards throw RoleCapabilityError for unsupported operations
     expect(Object.keys(aegis)).not.toContain('assertAdminAccess');
   });
 
-  /**
-   * These tests exercise assertCapability() directly by wiring a proxy that
-   * calls the guard function with the wrong capability flag. The simplest way
-   * to do this without duplicating internal logic is to create a client of a
-   * lower-privilege role and invoke the guarded method with the cap flag we
-   * want to verify throws.
-   *
-   * Because `transfer` is available to investor but `mint` is not, we can verify
-   * the guard shape by constructing an issuer client (which has mint) and
-   * confirming a read-only client does NOT expose the guard-wrapped path at all.
-   */
-  it('assertCapability produces a RoleCapabilityError with expected shape', () => {
-    // We test via createComplianceOperatorClient — it guards canAdminister.
-    // Manually trigger the guard by calling a private helper via the exported
-    // assertWhitelistAccess shim on an issuer client (which doesn't have it).
-    const issuer = createIssuerClient({ ...BASE_CONFIG, keypair: makeKeypair() });
-    // assertWhitelistAccess is not on issuer — so we simulate the guard manually.
-    const { getRoleCapabilities: getCapabilities, createReadOnlyClient: roFactory } =
-      jest.requireActual('../src/client-factory') as typeof import('../src/client-factory');
+  it('runtime guard throws RoleCapabilityError for an unsupported capability', () => {
+    const aegis = createInvestorClient({ ...BASE_CONFIG, keypair: makeKeypair() });
 
-    // Build an error the same way the factory does to validate the shape.
-    const err = new RoleCapabilityError(
-      'The "investor" client does not permit "mint". Required capability: canMint.',
-      'OPERATION_NOT_PERMITTED',
-      'investor',
-      'mint',
+    expect(() => aegis.assertCapability('canMint', 'mint')).toThrow(
+      RoleCapabilityError,
     );
-    expect(err.code).toBe('OPERATION_NOT_PERMITTED');
-    expect(err.role).toBe('investor');
-    expect(err.operation).toBe('mint');
+
+    try {
+      aegis.assertCapability('canMint', 'mint');
+      throw new Error('expected runtime capability guard to throw');
+    } catch (error) {
+      expect(error).toBeInstanceOf(RoleCapabilityError);
+      const roleError = error as RoleCapabilityError;
+      expect(roleError.code).toBe('OPERATION_NOT_PERMITTED');
+      expect(roleError.role).toBe('investor');
+      expect(roleError.operation).toBe('mint');
+    }
+  });
+
+  it('does not allow consumers to mutate shared capability flags', () => {
+    const aegis = createInvestorClient({ ...BASE_CONFIG, keypair: makeKeypair() });
+
+    expect(Reflect.set(aegis.capabilities as object, 'canMint', true)).toBe(false);
+    expect(aegis.capabilities.canMint).toBe(false);
+    expect(() => aegis.assertCapability('canMint', 'mint')).toThrow(
+      RoleCapabilityError,
+    );
+  });
+
+  it('runtime guard allows capabilities granted to the declared role', () => {
+    const admin = createAdminClient({ ...BASE_CONFIG, keypair: makeKeypair() });
+    expect(() =>
+      admin.assertCapability('canAdminister', 'admin operation'),
+    ).not.toThrow();
   });
 });
