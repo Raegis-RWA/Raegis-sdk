@@ -1,3 +1,5 @@
+import { AegisSdkError } from './public';
+
 export type PortfolioErrorCode =
   | 'RPC_FAILURE'
   | 'PARSE_ERROR'
@@ -8,15 +10,14 @@ export type PortfolioErrorCode =
 /**
  * Custom error class for investor portfolio operations.
  */
-export class PortfolioError extends Error {
-  public readonly code: PortfolioErrorCode;
-  public readonly cause?: Error;
-
+export class PortfolioError extends AegisSdkError<PortfolioErrorCode> {
   constructor(message: string, code: PortfolioErrorCode, cause?: Error) {
-    super(message);
+    super({
+      code,
+      category: 'investor',
+      message,
+      cause,
+    });
     this.name = 'PortfolioError';
-    this.code = code;
-    this.cause = cause;
-    Object.setPrototypeOf(this, PortfolioError.prototype);
   }
 }

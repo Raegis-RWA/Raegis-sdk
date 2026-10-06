@@ -1,3 +1,5 @@
+import { AegisSdkError } from './public';
+
 export type EventDecodeErrorCode =
   | 'INVALID_EVENT_INPUT'
   | 'EMPTY_TOPICS'
@@ -5,12 +7,13 @@ export type EventDecodeErrorCode =
   | 'VALUE_DECODE_FAILED'
   | 'UNSUPPORTED_EVENT';
 
-export class EventDecodeError extends Error {
-  public readonly code: EventDecodeErrorCode;
-
+export class EventDecodeError extends AegisSdkError<EventDecodeErrorCode> {
   constructor(code: EventDecodeErrorCode, message: string) {
-    super(message);
+    super({
+      code,
+      category: 'soroban',
+      message,
+    });
     this.name = 'EventDecodeError';
-    this.code = code;
   }
 }

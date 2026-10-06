@@ -1,3 +1,5 @@
+import { AegisSdkError } from './public';
+
 export type NetworkFailureCode =
   | 'TIMEOUT'
   | 'RPC_UNAVAILABLE'
@@ -6,11 +8,9 @@ export type NetworkFailureCode =
   | 'MALFORMED_RESPONSE'
   | 'UNKNOWN';
 
-export class NetworkFailure extends Error {
-  public readonly code: NetworkFailureCode;
+export class NetworkFailure extends AegisSdkError<NetworkFailureCode> {
   public readonly retryable: boolean;
   public readonly retryAfterSeconds?: number;
-  public readonly cause?: unknown;
 
   constructor(
     message: string,
@@ -21,21 +21,20 @@ export class NetworkFailure extends Error {
       cause?: unknown;
     } = {},
   ) {
-    super(message);
+    super({
+      code,
+      category: 'network',
+      message,
+      metadata: {
+        retryable,
+        ...(options.retryAfterSeconds !== undefined
+          ? { retryAfterSeconds: options.retryAfterSeconds }
+          : {}),
+      },
+      cause: options.cause,
+    });
     this.name = 'NetworkFailure';
-    this.code = code;
     this.retryable = retryable;
     this.retryAfterSeconds = options.retryAfterSeconds;
-
-    if (options.cause !== undefined) {
-      Object.defineProperty(this, 'cause', {
-        value: options.cause,
-        enumerable: false,
-        configurable: false,
-        writable: false,
-      });
-    }
-
-    Object.setPrototypeOf(this, NetworkFailure.prototype);
   }
 }

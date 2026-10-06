@@ -1,3 +1,5 @@
+import { AegisSdkError } from '../errors/public';
+
 export type AdminActionOperation =
   | 'whitelist-add'
   | 'whitelist-remove'
@@ -79,12 +81,13 @@ export type AdminReceiptErrorCode =
   | 'INVALID_EXPLORER_URL'
   | 'INVALID_FAILURE_CODE';
 
-export class AdminReceiptError extends Error {
-  public readonly code: AdminReceiptErrorCode;
-
+export class AdminReceiptError extends AegisSdkError<AdminReceiptErrorCode> {
   constructor(code: AdminReceiptErrorCode, message: string) {
-    super(message);
+    super({
+      code,
+      category: 'admin',
+      message,
+    });
     this.name = 'AdminReceiptError';
-    this.code = code;
   }
 }

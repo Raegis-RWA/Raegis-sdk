@@ -5,6 +5,7 @@ import { InvestorModule } from './investor/portfolio';
 import { RoleModule } from './role';
 import { EventsModule } from './events/module';
 import { AegisClientConfig, resolveClientConfig } from './config/validate';
+import { AegisSdkError } from './errors/public';
 import { classifyNetworkFailure } from './network/failures';
 import {
   buildNetworkFailureDiagnostic,
@@ -19,18 +20,12 @@ export class AegisClient {
   public networkPassphrase: string;
   public keypair?: Keypair;
 
-  // Modules
   public compliance: ComplianceModule;
   public asset: AssetModule;
   public investor: InvestorModule;
   public role: RoleModule;
   public events: EventsModule;
 
-  /**
-   * Initializes the Aegis RWA SDK Client.
-   * @param config AegisClientConfig object. Provide either an `environment` preset
-   * (`testnet` | `local` | `mainnet`) or explicit `rpcUrl`/`networkPassphrase` values.
-   */
   constructor(config: AegisClientConfig) {
     const resolved = resolveClientConfig(config);
     const allowHttp = resolved.rpcUrl.startsWith('http://');
@@ -38,8 +33,6 @@ export class AegisClient {
     this.rpcServer = new rpc.Server(resolved.rpcUrl, { allowHttp });
     this.contractId = resolved.contractId;
     this.networkPassphrase = resolved.networkPassphrase;
-
-    // TODO: Add support for browser-based wallet providers (Freighter/Albedo)
     this.keypair = resolved.keypair;
 
     this.compliance = new ComplianceModule(this);
@@ -49,22 +42,19 @@ export class AegisClient {
     this.events = new EventsModule(this);
   }
 
-  /**
-   * Helper to verify the client is configured for write operations.
-   */
   public requireSigner(): Keypair {
     if (!this.keypair) {
-      throw new Error("Transaction signing requires a Keypair to be configured on the AegisClient.");
+      throw new AegisSdkError({
+        code: 'TRANSACTION_SIGNER_REQUIRED',
+        category: 'transaction',
+        message:
+          'Transaction signing requires a Keypair to be configured on the AegisClient.',
+      });
     }
     return this.keypair;
   }
 
-  /**
-   * Runs an SDK network operation behind the stable network-failure boundary.
-   */
-  public async runNetworkOperation<T>(
-    operation: () => Promise<T>
-  ): Promise<T> {
+  public async runNetworkOperation<T>(operation: () => Promise<T>): Promise<T> {
     try {
       return await operation();
     } catch (error) {
@@ -72,9 +62,6 @@ export class AegisClient {
     }
   }
 
-  /**
-   * Builds a serialisable, redacted diagnostic for support and dashboard UI.
-   */
   public diagnoseNetworkFailure(error: unknown): NetworkFailureDiagnostic {
     return buildNetworkFailureDiagnostic(error);
   }

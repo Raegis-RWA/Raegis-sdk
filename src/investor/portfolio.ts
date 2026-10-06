@@ -8,7 +8,7 @@ import {
   FetchPortfolioOptions,
   TransferEligibility,
 } from '../types/portfolio';
-import { PortfolioError } from '../errors/portfolio';
+import { normalizeAegisSdkError } from '../errors/public';
 import { parseSorobanResult } from '../utils/xdr-parser';
 
 /**
@@ -30,7 +30,7 @@ export class InvestorModule {
    */
   public async getPortfolio(
     investorAddress: string,
-    options: FetchPortfolioOptions = {}
+    options: FetchPortfolioOptions = {},
   ): Promise<InvestorPortfolio> {
     const fetchedAt = new Date().toISOString();
 
@@ -38,7 +38,7 @@ export class InvestorModule {
       return this.buildUnavailablePortfolio(
         investorAddress || '',
         'Invalid investor address provided.',
-        fetchedAt
+        fetchedAt,
       );
     }
 
@@ -47,21 +47,29 @@ export class InvestorModule {
 
     // 1. Check Compliance / KYC Whitelist status safely
     try {
-      isKycApproved = await this.client.compliance.checkWhitelist(investorAddress);
+      isKycApproved = await this.client.compliance.checkWhitelist(
+        investorAddress,
+      );
       isBlocked = !isKycApproved;
     } catch (error) {
-      const errorMsg = error instanceof Error ? error.message : String(error);
+      const failure = normalizeAegisSdkError(error, {
+        code: 'COMPLIANCE_QUERY_FAILED',
+        category: 'compliance',
+        message: 'The compliance status query failed.',
+      });
+
       return this.buildUnavailablePortfolio(
         investorAddress,
-        `Compliance status query failed: ${errorMsg}`,
-        fetchedAt
+        `Compliance status query failed: ${failure.message}`,
+        fetchedAt,
       );
     }
 
     // 2. Determine asset list to query
-    const targetAssetContracts = options.assetContractIds && options.assetContractIds.length > 0
-      ? options.assetContractIds
-      : [this.client.contractId];
+    const targetAssetContracts =
+      options.assetContractIds && options.assetContractIds.length > 0
+        ? options.assetContractIds
+        : [this.client.contractId];
 
     const holdings: AssetHolding[] = [];
 
@@ -72,12 +80,12 @@ export class InvestorModule {
           contractId,
           investorAddress,
           isKycApproved,
-          options.includeMetadata !== false
+          options.includeMetadata !== false,
         );
         if (holding) {
           holdings.push(holding);
         }
-      } catch (error) {
+      } catch {
         // If an individual asset query fails, we mark its eligibility as unavailable
         // while preserving overall portfolio resilience.
         const fallbackHolding: AssetHolding = {
@@ -104,7 +112,9 @@ export class InvestorModule {
 
     // 4. Calculate counts & determine portfolio status
     const totalHoldingsCount = holdings.length;
-    const compliantHoldingsCount = holdings.filter((h) => h.isCompliant).length;
+    const compliantHoldingsCount = holdings.filter(
+      (h) => h.isCompliant,
+    ).length;
     const activeHoldings = holdings.filter((h) => BigInt(h.balance) > 0n);
 
     let status: PortfolioStatus;
@@ -135,12 +145,12 @@ export class InvestorModule {
     contractId: string,
     investorAddress: string,
     isKycApproved: boolean,
-    includeMetadata: boolean
+    includeMetadata: boolean,
   ): Promise<AssetHolding | null> {
     const contract = new Contract(contractId);
     const call = contract.call(
       'balance',
-      nativeToScVal(investorAddress, { type: 'address' })
+      nativeToScVal(investorAddress, { type: 'address' }),
     );
 
     let balanceRaw = '0';
@@ -152,7 +162,8 @@ export class InvestorModule {
 
       if (rpc.Api.isSimulationSuccess(result) && result.result) {
         const parsed = parseSorobanResult(result.result.retval as any);
-        balanceRaw = parsed !== null && parsed !== undefined ? String(parsed) : '0';
+        balanceRaw =
+          parsed !== null && parsed !== undefined ? String(parsed) : '0';
       }
     } catch {
       balanceRaw = '0';
@@ -176,13 +187,13 @@ export class InvestorModule {
       reason: !isKycApproved
         ? 'Investor is not KYC approved.'
         : BigInt(balanceRaw) <= 0n
-        ? 'Insufficient asset balance.'
-        : undefined,
+          ? 'Insufficient asset balance.'
+          : undefined,
       code: !isKycApproved
         ? 'NOT_WHITELISTED'
         : BigInt(balanceRaw) <= 0n
-        ? 'ZERO_BALANCE'
-        : undefined,
+          ? 'ZERO_BALANCE'
+          : undefined,
     };
 
     return {
@@ -236,7 +247,7 @@ export class InvestorModule {
   private buildUnavailablePortfolio(
     investorAddress: string,
     errorReason: string,
-    fetchedAt: string
+    fetchedAt: string,
   ): InvestorPortfolio {
     return {
       investorAddress,
