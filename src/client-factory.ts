@@ -216,6 +216,8 @@ export function createReadOnlyClient(
 ): AegisReadOnlyClient {
   const clientConfig: AegisClientConfig = {
     contractId: config.contractId,
+    contractRegistry: config.contractRegistry,
+    contractName: config.contractName,
     environment: config.environment,
     rpcUrl: config.rpcUrl,
     networkPassphrase: config.networkPassphrase,

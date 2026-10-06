@@ -6,11 +6,11 @@ describe('AegisClient Configuration', () => {
     const client = new AegisClient({
       rpcUrl: 'https://soroban-testnet.stellar.org:443',
       networkPassphrase: Networks.TESTNET,
-      contractId: 'C...' // Mock Contract ID
+      contractId: 'CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABSC4' // Mock Contract ID
     });
 
     expect(client.rpcServer).toBeDefined();
-    expect(client.contractId).toBe('C...');
+    expect(client.contractId).toBe('CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABSC4');
     expect(client.compliance).toBeDefined();
     expect(client.asset).toBeDefined();
     expect(client.events).toBeDefined();
@@ -20,7 +20,7 @@ describe('AegisClient Configuration', () => {
     const client = new AegisClient({
       rpcUrl: 'https://soroban-testnet.stellar.org:443',
       networkPassphrase: Networks.TESTNET,
-      contractId: 'C...'
+      contractId: 'CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABSC4'
     });
 
     expect(() => {

@@ -10,11 +10,13 @@ The entry point for interacting with the Aegis Protocol.
 * `environment` (`'testnet' | 'local' | 'mainnet'`, optional): A typed environment preset that supplies `rpcUrl` and `networkPassphrase` automatically. See [Environment Presets](./environments.md).
 * `rpcUrl` (string, optional): The URL of the Soroban RPC node you are connecting to. Required if `environment` is omitted; otherwise overrides the preset's default.
 * `networkPassphrase` (string, optional): The Stellar network passphrase (e.g., `Networks.TESTNET` or `Networks.PUBLIC`). Required if `environment` is omitted; otherwise overrides the preset's default.
-* `contractId` (string): The StrKey-encoded Contract ID of the deployed Aegis contract.
+* `contractId` (string, optional): Direct StrKey-encoded Contract ID. The SDK validates that it is a Stellar `C...` contract StrKey. Use this or the registry fields below, not both.
+* `contractRegistry` (`AegisContractRegistry`, optional): Environment-scoped named contract IDs, usually created with `defineContractRegistry(...)`.
+* `contractName` (string, optional): Name to resolve from `contractRegistry` for the selected `environment`. Required when registry selection is used.
 * `keypair` (Keypair, optional): A Stellar SDK Keypair object used for signing state-changing transactions (like minting or transferring). If omitted, the client can only make read-only calls.
 * `allowMainnet` (boolean, optional): Must be `true` to use `environment: 'mainnet'`, which is gated until the Aegis protocol is live on the public network.
 
-Either `environment` or both `rpcUrl` and `networkPassphrase` must be provided. Invalid or unsafe configuration (malformed URLs, insecure `http://` overrides outside the `local` preset, empty passphrases, unavailable environments) throws a `ConfigValidationError`.
+Either `environment` or both `rpcUrl` and `networkPassphrase` must be provided. Select the contract with either `contractId`, or with `contractRegistry` + `contractName` together with a named `environment`. Invalid or unsafe configuration (malformed URLs, invalid contract StrKeys, missing registry entries, insecure `http://` overrides outside the `local` preset, empty passphrases, unavailable environments) throws a `ConfigValidationError`.
 
 ### Client Modules
 * `client.compliance`: Whitelist & KYC verification module (`ComplianceModule`).
@@ -56,7 +58,7 @@ import { Networks } from '@stellar/stellar-sdk';
 const client = new AegisClient({
   rpcUrl: 'https://soroban-testnet.stellar.org',
   networkPassphrase: Networks.TESTNET,
-  contractId: 'C...', // Aegis Protocol Contract ID
+  contractId: 'CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABSC4', // Aegis Protocol Contract ID
 });
 
 try {
@@ -104,7 +106,7 @@ import { Networks, Keypair } from '@stellar/stellar-sdk';
 const client = new AegisClient({
   rpcUrl: 'https://soroban-testnet.stellar.org',
   networkPassphrase: Networks.TESTNET,
-  contractId: 'C...',
+  contractId: 'CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABSC4',
   keypair: issuerKeypair, // required for mint/transfer; omit for read-only usage
 });
 

@@ -1,5 +1,6 @@
 import { AegisClient } from '../src/client';
 import { AEGIS_ENVIRONMENTS } from '../src/config/environments';
+import { defineContractRegistry } from '../src/config/contracts';
 import { ConfigValidationError } from '../src/errors/config';
 import { Networks } from '@stellar/stellar-sdk';
 
@@ -116,8 +117,100 @@ describe('AegisClient explicit (legacy) configuration', () => {
 
   it('throws when contractId is missing', () => {
     expect(() => {
-      // @ts-expect-error intentionally missing required config for runtime validation coverage
       new AegisClient({ environment: 'testnet' });
+    }).toThrow(ConfigValidationError);
+  });
+
+  it('rejects a malformed Stellar contract ID with a typed code', () => {
+    try {
+      new AegisClient({
+        environment: 'testnet',
+        contractId: 'C...',
+      });
+      throw new Error('expected invalid contract ID to throw');
+    } catch (error) {
+      expect(error).toBeInstanceOf(ConfigValidationError);
+      expect((error as ConfigValidationError).code).toBe('INVALID_CONTRACT_ID');
+    }
+  });
+
+  it('resolves a named contract from the selected environment registry', () => {
+    const contractRegistry = defineContractRegistry({
+      testnet: {
+        protocol: mockContractId,
+      },
+    });
+
+    const client = new AegisClient({
+      environment: 'testnet',
+      contractRegistry,
+      contractName: 'protocol',
+    });
+
+    expect(client.contractId).toBe(mockContractId);
+  });
+
+  it('rejects a missing named contract without falling across environments', () => {
+    const contractRegistry = defineContractRegistry({
+      local: {
+        protocol: mockContractId,
+      },
+    });
+
+    expect(() => {
+      new AegisClient({
+        environment: 'testnet',
+        contractRegistry,
+        contractName: 'protocol',
+      });
+    }).toThrow(ConfigValidationError);
+  });
+
+  it('rejects invalid contract IDs when a registry is defined', () => {
+    expect(() =>
+      defineContractRegistry({
+        testnet: {
+          protocol: 'not-a-contract-id',
+        },
+      })
+    ).toThrow(ConfigValidationError);
+  });
+
+  it('rejects a registry selection when networkPassphrase disagrees with the named environment', () => {
+    const contractRegistry = defineContractRegistry({
+      testnet: {
+        protocol: mockContractId,
+      },
+    });
+
+    try {
+      new AegisClient({
+        environment: 'testnet',
+        contractRegistry,
+        contractName: 'protocol',
+        networkPassphrase: Networks.PUBLIC,
+      });
+      throw new Error('expected mismatched registry passphrase to throw');
+    } catch (error) {
+      expect(error).toBeInstanceOf(ConfigValidationError);
+      expect((error as ConfigValidationError).code).toBe('INVALID_NETWORK_PASSPHRASE');
+    }
+  });
+
+  it('rejects ambiguous direct and registry contract selection', () => {
+    const contractRegistry = defineContractRegistry({
+      testnet: {
+        protocol: mockContractId,
+      },
+    });
+
+    expect(() => {
+      new AegisClient({
+        environment: 'testnet',
+        contractId: mockContractId,
+        contractRegistry,
+        contractName: 'protocol',
+      });
     }).toThrow(ConfigValidationError);
   });
 });

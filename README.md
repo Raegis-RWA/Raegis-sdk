@@ -14,6 +14,9 @@ Use the role-aware factory to construct a client with explicit capability
 intent. The returned object only exposes modules and operations that are
 appropriate for the declared role.
 
+The examples use `CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABSC4` as a valid-format contract StrKey for
+configuration examples only. Replace it with the deployed contract ID for your environment.
+
 ```typescript
 import {
   createReadOnlyClient,
@@ -26,7 +29,7 @@ import { Keypair } from '@stellar/stellar-sdk';
 // Read-only — no keypair needed. Suitable for dashboards and indexers.
 const reader = createReadOnlyClient({
   environment: 'testnet',
-  contractId: 'C_YOUR_CONTRACT_ID',
+  contractId: 'CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABSC4',
 });
 const isApproved = await reader.compliance.checkWhitelist('G_USER_PUBLIC_KEY');
 const portfolio  = await reader.investor.getPortfolio('G_USER_PUBLIC_KEY');
@@ -34,7 +37,7 @@ const portfolio  = await reader.investor.getPortfolio('G_USER_PUBLIC_KEY');
 // Investor — keypair required. Transfer capability only.
 const investor = createInvestorClient({
   environment: 'testnet',
-  contractId: 'C_YOUR_CONTRACT_ID',
+  contractId: 'CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABSC4',
   keypair: Keypair.fromSecret('S_INVESTOR_SECRET'),
 });
 await investor.asset.transfer('G_RECIPIENT', 100);
@@ -42,7 +45,7 @@ await investor.asset.transfer('G_RECIPIENT', 100);
 // Issuer — keypair required. Adds asset minting.
 const issuer = createIssuerClient({
   environment: 'testnet',
-  contractId: 'C_YOUR_CONTRACT_ID',
+  contractId: 'CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABSC4',
   keypair: Keypair.fromSecret('S_ISSUER_SECRET'),
 });
 await issuer.asset.mint('G_INVESTOR', 5000);
@@ -50,7 +53,7 @@ await issuer.asset.mint('G_INVESTOR', 5000);
 // Admin — keypair required. Full access.
 const admin = createAdminClient({
   environment: 'testnet',
-  contractId: 'C_YOUR_CONTRACT_ID',
+  contractId: 'CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABSC4',
   keypair: Keypair.fromSecret('S_ADMIN_SECRET'),
 });
 admin.assertAdminAccess(); // explicit guard before privileged call
@@ -68,10 +71,33 @@ import { AegisClient } from '@aegis/sdk';
 
 const aegis = new AegisClient({
   environment: 'testnet',
-  contractId: 'C_YOUR_CONTRACT_ID',
+  contractId: 'CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABSC4',
   keypair: Keypair.fromSecret('S...'), // optional for read-only
 });
 ```
+
+For applications that target more than one deployed Aegis contract, use an
+environment-scoped registry instead of manually switching IDs:
+
+```typescript
+import { AegisClient, defineContractRegistry } from '@aegis/sdk';
+
+const contracts = defineContractRegistry({
+  testnet: {
+    protocol: 'CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABSC4',
+  },
+});
+
+const aegisFromRegistry = new AegisClient({
+  environment: 'testnet',
+  contractRegistry: contracts,
+  contractName: 'protocol',
+});
+```
+
+Registry lookup never falls across environments, and every selected contract ID
+is validated as a Stellar `C...` contract StrKey. See
+[Environment Presets](./docs/environments.md) for validation and error details.
 
 ## Role Discovery & Capability Checks
 Check what an address is classified as, and what it can currently attempt through the SDK.

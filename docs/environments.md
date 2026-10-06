@@ -22,12 +22,18 @@ console.log(AEGIS_ENVIRONMENTS.testnet.rpcUrl);
 
 ## Using a Preset
 
+`testnet` is the recommended development preset. It is not selected implicitly:
+name the environment so configuration cannot silently drift between networks.
+
+The examples use `CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABSC4` as a valid-format contract StrKey only; replace it
+with the contract deployed in the selected environment.
+
 ```typescript
 import { AegisClient } from '@aegis/sdk';
 
 const aegis = new AegisClient({
   environment: 'testnet',
-  contractId: 'C_YOUR_CONTRACT_ID',
+  contractId: 'CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABSC4',
 });
 ```
 
@@ -40,13 +46,44 @@ private RPC node while keeping the correct network passphrase):
 const aegis = new AegisClient({
   environment: 'testnet',
   rpcUrl: 'https://my-private-soroban-rpc.example.com',
-  contractId: 'C_YOUR_CONTRACT_ID',
+  contractId: 'CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABSC4',
 });
 ```
 
 Overrides are validated: malformed URLs and empty passphrases throw a `ConfigValidationError`.
 Plain `http://` URLs are only accepted when `environment: 'local'` — using `http://` against
 `testnet` or `mainnet` throws, since it almost always indicates a misconfigured endpoint.
+
+## Named Contract Registry
+
+When an application needs stable logical names instead of manually switching contract IDs,
+define an environment-scoped registry and select one entry by name:
+
+```typescript
+import { AegisClient, defineContractRegistry } from '@aegis/sdk';
+
+const contracts = defineContractRegistry({
+  testnet: {
+    protocol: 'CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABSC4',
+  },
+  local: {
+    protocol: 'CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABSC4',
+  },
+});
+
+const aegis = new AegisClient({
+  environment: 'testnet',
+  contractRegistry: contracts,
+  contractName: 'protocol',
+});
+```
+
+A registry lookup is allowed only with a named environment. The SDK validates all entries
+passed through `defineContractRegistry`, never falls back to a contract registered for a
+different environment, and rejects ambiguous configuration that supplies both `contractId`
+and `contractRegistry`/`contractName`.
+
+Direct `contractId` configuration remains supported for existing callers.
 
 ## The `mainnet` Preset Is Gated
 
@@ -58,7 +95,7 @@ explicitly:
 const aegis = new AegisClient({
   environment: 'mainnet',
   allowMainnet: true, // required while mainnet is gated
-  contractId: 'C_YOUR_CONTRACT_ID',
+  contractId: 'CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABSC4',
 });
 ```
 
@@ -71,7 +108,7 @@ If you don't want to use a preset at all (e.g. connecting to an unlisted network
 const aegis = new AegisClient({
   rpcUrl: 'https://my-custom-node.example.com',
   networkPassphrase: 'My Custom Network ; 2026',
-  contractId: 'C_YOUR_CONTRACT_ID',
+  contractId: 'CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABSC4',
 });
 ```
 
@@ -79,7 +116,8 @@ const aegis = new AegisClient({
 
 `ConfigValidationError.code` is one of:
 
-* `MISSING_CONFIG` - `contractId` is missing, or neither `environment` nor `rpcUrl`/`networkPassphrase` were provided.
+* `MISSING_CONFIG` - required network or contract selection is missing, ambiguous, or a named registry entry does not exist for the selected environment.
+* `INVALID_CONTRACT_ID` - a direct or registered contract ID is not a valid Stellar `C...` contract StrKey.
 * `ENVIRONMENT_UNAVAILABLE` - the requested environment (currently only `mainnet`) is gated and `allowMainnet` was not set.
 * `INVALID_RPC_URL` - the `rpcUrl` is not a valid URL, uses an unsupported protocol, or is an insecure `http://` override outside the `local` preset.
 * `INVALID_NETWORK_PASSPHRASE` - the `networkPassphrase` override is empty or not a string.

@@ -1,5 +1,10 @@
 import { Keypair } from '@stellar/stellar-sdk';
 import { AEGIS_ENVIRONMENTS, AegisEnvironmentName } from './environments';
+import {
+  AegisContractRegistry,
+  resolveRegisteredContractId,
+  validateContractId,
+} from './contracts';
 import { ConfigValidationError } from '../errors/config';
 
 /**
@@ -9,9 +14,14 @@ import { ConfigValidationError } from '../errors/config';
  *  - `environment`: a named preset (`testnet` | `local` | `mainnet`), optionally
  *    overriding `rpcUrl` and/or `networkPassphrase`, or
  *  - explicit `rpcUrl` and `networkPassphrase` values (legacy/fully custom setups).
+ *
+ * Select the contract either with a direct `contractId`, or with
+ * `contractRegistry` + `contractName` when using a named environment.
  */
 export interface AegisClientConfig {
-  contractId: string;
+  contractId?: string;
+  contractRegistry?: AegisContractRegistry;
+  contractName?: string;
   keypair?: Keypair;
   environment?: AegisEnvironmentName;
   rpcUrl?: string;
@@ -56,13 +66,50 @@ function validateNetworkPassphrase(networkPassphrase: string): void {
   }
 }
 
+function resolveConfiguredContractId(config: AegisClientConfig): string {
+  const hasDirectContract = config.contractId !== undefined;
+  const hasRegistrySelection =
+    config.contractRegistry !== undefined || config.contractName !== undefined;
+
+  if (hasDirectContract && hasRegistrySelection) {
+    throw new ConfigValidationError(
+      'Choose either contractId or contractRegistry + contractName, not both.',
+      'MISSING_CONFIG'
+    );
+  }
+
+  if (hasDirectContract) {
+    return validateContractId(config.contractId as string);
+  }
+
+  if (!config.contractRegistry || config.contractName === undefined) {
+    throw new ConfigValidationError(
+      'AegisClientConfig requires either contractId or contractRegistry + contractName.',
+      'MISSING_CONFIG'
+    );
+  }
+
+  if (!config.environment) {
+    throw new ConfigValidationError(
+      'contractRegistry lookup requires a named environment (testnet/local/mainnet).',
+      'MISSING_CONFIG'
+    );
+  }
+
+  return resolveRegisteredContractId(
+    config.contractRegistry,
+    config.environment,
+    config.contractName
+  );
+}
+
 /**
  * Resolves and validates an `AegisClientConfig` into concrete rpcUrl/networkPassphrase
  * values, merging in an environment preset when one is specified.
  */
 export function resolveClientConfig(config: AegisClientConfig): ResolvedAegisConfig {
-  if (!config || typeof config.contractId !== 'string' || config.contractId.length === 0) {
-    throw new ConfigValidationError('AegisClientConfig.contractId is required.', 'MISSING_CONFIG');
+  if (!config) {
+    throw new ConfigValidationError('AegisClientConfig is required.', 'MISSING_CONFIG');
   }
 
   let rpcUrl: string;
@@ -92,6 +139,17 @@ export function resolveClientConfig(config: AegisClientConfig): ResolvedAegisCon
     }
     if (config.networkPassphrase) {
       validateNetworkPassphrase(config.networkPassphrase);
+
+      const usesNamedRegistry =
+        config.contractId === undefined &&
+        config.contractRegistry !== undefined &&
+        config.contractName !== undefined;
+      if (usesNamedRegistry && config.networkPassphrase !== preset.networkPassphrase) {
+        throw new ConfigValidationError(
+          `Invalid networkPassphrase: registry selection for environment "${config.environment}" must use that environment's preset passphrase.`,
+          'INVALID_NETWORK_PASSPHRASE'
+        );
+      }
     }
 
     rpcUrl = config.rpcUrl ?? preset.rpcUrl;
@@ -112,10 +170,12 @@ export function resolveClientConfig(config: AegisClientConfig): ResolvedAegisCon
     networkPassphrase = config.networkPassphrase;
   }
 
+  const contractId = resolveConfiguredContractId(config);
+
   return {
     rpcUrl,
     networkPassphrase,
-    contractId: config.contractId,
+    contractId,
     keypair: config.keypair,
   };
 }

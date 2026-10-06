@@ -41,6 +41,11 @@ export {
   NetworkRecoveryAction,
 } from './diagnostics/network';
 export { resolveClientConfig } from './config/validate';
+export {
+  defineContractRegistry,
+  resolveRegisteredContractId,
+  validateContractId,
+} from './config/contracts';
 export { AEGIS_ENVIRONMENTS, getEnvironmentPreset } from './config/environments';
 export * from './types/portfolio';
 export * from './errors/portfolio';
@@ -52,4 +57,5 @@ export * from './errors/config';
 export * from './types/contract-event';
 export * from './errors/event';
 export type { AegisEnvironmentName, AegisEnvironmentPreset } from './config/environments';
+export type { AegisContractRegistry } from './config/contracts';
 export type { ResolvedAegisConfig } from './config/validate';

@@ -45,7 +45,9 @@ export interface RoleCapabilities {
  * No keypair is accepted — read-only clients never sign transactions.
  */
 export interface ReadOnlyClientConfig {
-  contractId: string;
+  contractId?: string;
+  contractRegistry?: import('../config/contracts').AegisContractRegistry;
+  contractName?: string;
   environment?: import('../config/environments').AegisEnvironmentName;
   rpcUrl?: string;
   networkPassphrase?: string;
