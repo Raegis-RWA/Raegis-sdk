@@ -61,6 +61,10 @@ See [Role-Aware Client Factory](./docs/role-aware-client-factory.md) for the
 full capability matrix, `compliance-operator` usage, error handling, and
 security notes.
 
+See [Public API Compatibility Matrix](./docs/public-api-compatibility.md) for the
+published export surface, Soroban/RPC dependencies, dashboard review targets,
+and breaking-change rules.
+
 For direct `AegisClient` construction (advanced / custom setups):
 
 ```typescript
