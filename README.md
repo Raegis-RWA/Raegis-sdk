@@ -85,6 +85,27 @@ const capability = await aegis.role.checkCapability('G_USER_PUBLIC_KEY', 'receiv
 console.log('Can receive transfer?', capability.isPermitted);
 ```
 
+
+## Compliance Status Transitions
+
+The SDK exposes a typed, fail-closed transition mapper for protocol-facing compliance
+state. The current contract whitelist query can directly prove only `approved`;
+a false or unavailable query is **not** relabeled as blocked/revoked/pending.
+
+```typescript
+import { mapComplianceStatusTransition } from '@aegis/sdk';
+
+const observation = await aegis.compliance.getComplianceStatus('G_USER_PUBLIC_KEY');
+const transition = mapComplianceStatusTransition('pending', observation.status);
+
+if (transition.failClosed) {
+  // Do not infer approval. This flag is not an on-chain authorization decision.
+}
+```
+
+See [Compliance Status Transitions](./docs/compliance-status-transitions.md) for the
+status model, stable transition codes, failure behaviour, and protocol/legal boundary.
+
 ## Contract Event Decoder
 Decode Soroban contract events into typed audit-trail models for dashboards and indexers.
 

@@ -70,6 +70,43 @@ try {
 
 > **Open note:** `checkWhitelist` passes the raw invocation object returned by `contract.call(...)` directly as the `transaction` field to `simulateTransaction` (cast through `as any`), rather than assembling a full `Transaction` via `TransactionBuilder` the way `AssetModule.mint`/`transfer` do. The source itself flags this with a comment ("Cast required depending on SDK version wrapper"), so the exact request shape expected by `simulateTransaction` across `@stellar/stellar-sdk` versions is not fully confirmed — verify against the installed SDK version rather than assuming it's stable.
 
+
+### `getComplianceStatus(address: string): Promise<ComplianceStatusSnapshot>`
+
+Observes the most specific protocol status the current whitelist surface can support
+without inventing state.
+
+**Signature**
+```typescript
+public async getComplianceStatus(address: string): Promise<ComplianceStatusSnapshot>
+```
+
+**Parameters**
+* `address` (string): The Stellar public key (`G...`) to observe.
+
+**Returns**
+`Promise<ComplianceStatusSnapshot>` with one of these conservative outcomes:
+* `approved / WHITELIST_APPROVED` when `checkWhitelist()` returns `true`.
+* `unknown / NOT_APPROVED_UNSPECIFIED` when it returns `false`. The current boolean contract surface cannot distinguish pending, blocked, revoked, or an unsuccessful simulation, so the SDK does not guess.
+* `unavailable / QUERY_FAILED` when the whitelist query throws. The method catches the RPC failure and returns a fail-closed observation instead of throwing it.
+
+The snapshot is protocol-facing SDK state. It is not legal/compliance advice and does
+not authorize a transaction; state-changing operations remain subject to contract
+authorization.
+
+### Compliance status transition helpers
+
+`mapComplianceStatusTransition(previous, current)` converts typed statuses into a
+stable transition `kind` and `code`. `normalizeComplianceStatus(value)` maps
+unrecognized runtime labels to `unknown`. A transition has `failClosed: true`
+unless the current status is explicitly `approved`; `failClosed: false` is still
+not a transaction authorization.
+
+Supported status labels are `pending`, `approved`, `blocked`, `revoked`,
+`unknown`, and `unavailable`. See
+[Compliance Status Transitions](./compliance-status-transitions.md) for semantics and
+the complete transition-code table.
+
 ---
 
 ## `AssetModule`

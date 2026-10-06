@@ -17,6 +17,11 @@ export type {
 export * from './types/client-factory';
 export * from './errors/client-factory';
 export { ComplianceModule } from './compliance';
+export {
+  mapComplianceStatusTransition,
+  normalizeComplianceStatus,
+} from './compliance-status';
+export * from './types/compliance-status';
 export { AssetModule } from './asset';
 export { InvestorModule } from './investor/portfolio';
 export { RoleModule } from './role';
