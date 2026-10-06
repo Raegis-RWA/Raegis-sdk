@@ -104,6 +104,15 @@ if (event.kind === 'transfer') {
 
 See [Contract Event Decoder](./docs/contract-events.md) for supported topics, unknown fallback behaviour, and dashboard integration guidance.
 
+## Dashboard integration readiness
+
+Before wiring portfolio, compliance, role, event, receipt, or transaction state
+into a dashboard, review the
+[Dashboard Integration Readiness Review](./docs/dashboard-integration-readiness.md).
+It defines the current public SDK seams, freshness and failure-state handling,
+signer/write boundaries, and protocol-compliance wording expected at the UI
+boundary.
+
 ## Testing
 To run the SDK unit tests locally:
 
