@@ -61,6 +61,10 @@ See [Role-Aware Client Factory](./docs/role-aware-client-factory.md) for the
 full capability matrix, `compliance-operator` usage, error handling, and
 security notes.
 
+For deployment assumptions, trust boundaries, signing and key risks,
+transaction/network threats, diagnostics privacy, and dashboard integration,
+see the [SDK Security Threat Model](./docs/security-threat-model.md).
+
 For direct `AegisClient` construction (advanced / custom setups):
 
 ```typescript
