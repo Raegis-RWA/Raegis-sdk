@@ -59,7 +59,9 @@ await admin.asset.mint('G_INVESTOR', 10000);
 
 See [Role-Aware Client Factory](./docs/role-aware-client-factory.md) for the
 full capability matrix, `compliance-operator` usage, error handling, and
-security notes.
+security notes. The [Operation Permission Matrix](./docs/operation-permission-matrix.md)
+maps the concrete typed operations for each declared role and documents where
+the raw `.client` escape hatch and contract authorization sit outside that boundary.
 
 For direct `AegisClient` construction (advanced / custom setups):
 
