@@ -61,6 +61,8 @@ See [Role-Aware Client Factory](./docs/role-aware-client-factory.md) for the
 full capability matrix, `compliance-operator` usage, error handling, and
 security notes.
 
+For privileged writes, see [Admin Operation Idempotency and Safe Retries](./docs/admin-operation-idempotency.md) for operation identities, ambiguous-submit handling, signer sequence ownership, duplicate-risk guidance, and a contributor review checklist.
+
 For direct `AegisClient` construction (advanced / custom setups):
 
 ```typescript
@@ -149,4 +151,3 @@ PRs submitted to this repository are reviewed against our [Pull Request Reviewer
 
 ### Acceptance Criteria Traceability
 Every PR **must** include an [acceptance criteria traceability table](docs/acceptance-criteria-traceability.md) that maps SDK modules, tests, docs, and behaviour verification to each acceptance criterion from the linked issue. This makes evaluation straightforward for maintainers and GrantFox reviewers.
-
