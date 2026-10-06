@@ -2,6 +2,8 @@
 
 The official TypeScript SDK for the **Raegis RWA Protocol**. This library provides a clean, class-based interface to interact with Raegis Soroban smart contracts on the Stellar network.
 
+The supported package entrypoints and stability rules are documented in [Public API & Export Governance](docs/public-api.md). For member-level behavior, see the [API Reference](docs/api-reference.md). Production code should import from `@aegis/sdk`; test helpers are available from `@aegis/sdk/testing`.
+
 ##  Installation
 
 ```bash
