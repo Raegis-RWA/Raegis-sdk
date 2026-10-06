@@ -18,6 +18,8 @@ export * from './types/client-factory';
 export * from './errors/client-factory';
 export { ComplianceModule } from './compliance';
 export { AssetModule } from './asset';
+export { IssuerModule, IssuerClientError } from './issuer';
+export type { IssuerClientErrorCode, IssuerOperation } from './issuer';
 export { InvestorModule } from './investor/portfolio';
 export { RoleModule } from './role';
 export { EventsModule } from './events/module';

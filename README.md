@@ -59,7 +59,8 @@ await admin.asset.mint('G_INVESTOR', 10000);
 
 See [Role-Aware Client Factory](./docs/role-aware-client-factory.md) for the
 full capability matrix, `compliance-operator` usage, error handling, and
-security notes.
+security notes. Issuer-specific validation and authorization boundaries are
+documented in [Issuer Role Client](./docs/issuer-client.md).
 
 For direct `AegisClient` construction (advanced / custom setups):
 

@@ -9,6 +9,7 @@ import {
 import { RoleCapabilityError } from './errors/client-factory';
 import { ComplianceModule } from './compliance';
 import { AssetModule } from './asset';
+import { IssuerModule } from './issuer';
 import { InvestorModule } from './investor/portfolio';
 import { EventsModule } from './events/module';
 import { RoleModule } from './role';
@@ -139,6 +140,8 @@ export interface AegisComplianceOperatorClient extends AegisInvestorClient {
  * Available for: `issuer`, `admin`.
  */
 export interface AegisIssuerClient extends AegisInvestorClient {
+  /** Issuer-specific validated operation boundary. */
+  readonly issuer: IssuerModule;
   /** Asset module — mint and transfer operations available. */
   readonly asset: Pick<AssetModule, 'mint' | 'transfer'>;
 }
@@ -321,17 +324,19 @@ export function createIssuerClient(
   const client = new AegisClient(config);
   const base = new RoleAwareClient(client, 'issuer');
   const capabilities = base.capabilities;
+  const issuer = new IssuerModule(client);
 
   return {
     ...base,
+    issuer,
     asset: {
       mint: (...args) => {
         assertCapability(capabilities, 'canMint', 'mint');
-        return client.asset.mint(...args);
+        return issuer.mint(...args);
       },
       transfer: (...args) => {
         assertCapability(capabilities, 'canTransfer', 'transfer');
-        return client.asset.transfer(...args);
+        return issuer.transfer(...args);
       },
     },
   };
@@ -361,6 +366,7 @@ export function createAdminClient(config: SignerClientConfig): AegisAdminClient 
 
   return {
     ...base,
+    issuer: new IssuerModule(client),
     asset: client.asset,
     assertAdminAccess(): void {
       assertCapability(capabilities, 'canAdminister', 'admin operation');
