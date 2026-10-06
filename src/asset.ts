@@ -24,23 +24,27 @@ constructor(client: AegisClient) {
       nativeToScVal(amount, { type: 'i128' })
     );
 
-    // TODO: Implement transaction simulation endpoint before submitting to check for auth/whitelist failures
-
-    // Note: In production, you must fetch the real sequence number for the account
-    const sourceAccount = new Account(signer.publicKey(), "0");
-
-    const tx = new TransactionBuilder(sourceAccount, {
-      fee: "1000",
-      networkPassphrase: this.client.networkPassphrase,
-    })
-    .addOperation(call)
-    .setTimeout(30)
-    .build();
-
-    tx.sign(signer);
-
     try {
-      const response = await this.client.rpcServer.sendTransaction(tx);
+      const sourceAccount = await this.client.runNetworkOperation(() =>
+        this.client.rpcServer.getAccount(signer.publicKey())
+      );
+
+      const tx = new TransactionBuilder(sourceAccount, {
+        fee: "1000",
+        networkPassphrase: this.client.networkPassphrase,
+      })
+      .addOperation(call)
+      .setTimeout(30)
+      .build();
+
+      const prepared = await this.client.runNetworkOperation(() =>
+        this.client.rpcServer.prepareTransaction(tx)
+      );
+      prepared.sign(signer);
+
+      const response = await this.client.runNetworkOperation(() =>
+        this.client.rpcServer.sendTransaction(prepared)
+      );
       return response.hash;
     } catch (error) {
       throw new Error(`Mint transaction failed: ${error}`);

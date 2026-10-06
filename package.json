@@ -4,6 +4,9 @@
   "description": "The official TypeScript SDK for the Aegis RWA Protocol on Soroban.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
+  "bin": {
+    "aegis-cli": "bin/aegis-cli.js"
+  },
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
@@ -28,13 +31,7 @@
     "type": "git",
     "url": "https://github.com/AegisRWA/aegis-sdk.git"
   },
-  "keywords": [
-    "stellar",
-    "soroban",
-    "rwa",
-    "web3",
-    "sdk"
-  ],
+  "keywords": ["stellar", "soroban", "rwa", "web3", "sdk"],
   "author": "Aegis RWA Protocol",
   "license": "MIT",
   "dependencies": {
