@@ -22,6 +22,8 @@ export { InvestorModule } from './investor/portfolio';
 export { RoleModule } from './role';
 export { EventsModule } from './events/module';
 export { decodeContractEvent, decodeContractEvents } from './events/decoder';
+export { mapAegisActivity, mapAegisHistory } from './activity/mapper';
+export * from './types/activity';
 export {
   AEGIS_EVENT_TOPICS,
   isKnownAegisEventTopic,

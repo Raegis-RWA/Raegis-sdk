@@ -104,6 +104,20 @@ if (event.kind === 'transfer') {
 
 See [Contract Event Decoder](./docs/contract-events.md) for supported topics, unknown fallback behaviour, and dashboard integration guidance.
 
+## Typed Activity History
+Normalize decoded contract events and admin receipts into one typed activity stream without adding a second RPC/indexer path.
+
+```typescript
+import { mapAegisHistory } from '@aegis/sdk';
+
+const history = mapAegisHistory([
+  client.events.decode(rpcEvent),
+  adminReceipt,
+]);
+```
+
+The mapper preserves caller order, keeps uncertainty explicit, and omits raw payloads from unknown events by default. See [Typed Activity & History Mapping](./docs/activity-history.md) for identity, status, and compliance boundaries.
+
 ## Testing
 To run the SDK unit tests locally:
 
