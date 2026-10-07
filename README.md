@@ -104,6 +104,8 @@ if (event.kind === 'transfer') {
 
 See [Contract Event Decoder](./docs/contract-events.md) for supported topics, unknown fallback behaviour, and dashboard integration guidance.
 
+See [Legal & Compliance Boundary Guide](./docs/legal-compliance-boundary-guide.md) for compliance architecture, KYC whitelisting, failure modes, and regulatory assumptions.
+
 ## Testing
 To run the SDK unit tests locally:
 
