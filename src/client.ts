@@ -1,6 +1,7 @@
 import { rpc, Keypair } from '@stellar/stellar-sdk';
 import { ComplianceModule } from './compliance';
 import { AssetModule } from './asset';
+import { AssetTokenisationModule } from './asset-tokenisation';
 import { InvestorModule } from './investor/portfolio';
 import { RoleModule } from './role';
 import { EventsModule } from './events/module';
@@ -22,6 +23,7 @@ export class AegisClient {
   // Modules
   public compliance: ComplianceModule;
   public asset: AssetModule;
+  public assetTokenisation: AssetTokenisationModule;
   public investor: InvestorModule;
   public role: RoleModule;
   public events: EventsModule;
@@ -44,6 +46,7 @@ export class AegisClient {
 
     this.compliance = new ComplianceModule(this);
     this.asset = new AssetModule(this);
+    this.assetTokenisation = new AssetTokenisationModule(this);
     this.investor = new InvestorModule(this);
     this.role = new RoleModule(this);
     this.events = new EventsModule(this);

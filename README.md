@@ -73,6 +73,21 @@ const aegis = new AegisClient({
 });
 ```
 
+## Asset Tokenisation Readiness
+
+Use `aegis.assetTokenisation` to inspect asset metadata, lifecycle state,
+the contract pause, total supply, and configured issuance caps before preparing
+the application's existing issuance flow.
+
+```typescript
+const readiness = await aegis.assetTokenisation.checkReadiness();
+console.log(readiness.ready, readiness.blockers);
+```
+
+The readiness result describes protocol state only. Application-level identity,
+role, recipient, and final submission checks remain authoritative. See
+[Asset Tokenisation](./docs/asset-tokenisation.md) for the exact bindings.
+
 ## Role Discovery & Capability Checks
 Check what an address is classified as, and what it can currently attempt through the SDK.
 This is a client-side convenience for UI gating, not on-chain authorization — see the

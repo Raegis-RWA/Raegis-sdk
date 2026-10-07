@@ -9,6 +9,7 @@ import {
 import { RoleCapabilityError } from './errors/client-factory';
 import { ComplianceModule } from './compliance';
 import { AssetModule } from './asset';
+import { AssetTokenisationModule } from './asset-tokenisation';
 import { InvestorModule } from './investor/portfolio';
 import { EventsModule } from './events/module';
 import { RoleModule } from './role';
@@ -107,6 +108,8 @@ export interface AegisReadOnlyClient {
   readonly compliance: ComplianceModule;
   /** Investor portfolio read module. */
   readonly investor: InvestorModule;
+  /** RWA asset readiness, metadata and operation-preparation helpers. */
+  readonly assetTokenisation: AssetTokenisationModule;
   /** Contract event decoder/fetcher module. */
   readonly events: EventsModule;
   /** Client-side role discovery module. */
@@ -175,6 +178,7 @@ class RoleAwareClient implements AegisReadOnlyClient {
   public readonly client: AegisClient;
   public readonly compliance: ComplianceModule;
   public readonly investor: InvestorModule;
+  public readonly assetTokenisation: AssetTokenisationModule;
   public readonly events: EventsModule;
   public readonly role_module: RoleModule;
 
@@ -184,6 +188,7 @@ class RoleAwareClient implements AegisReadOnlyClient {
     this.client = client;
     this.compliance = client.compliance;
     this.investor = client.investor;
+    this.assetTokenisation = client.assetTokenisation;
     this.events = client.events;
     this.role_module = client.role;
   }
