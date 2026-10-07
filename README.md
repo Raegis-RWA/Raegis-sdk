@@ -135,6 +135,8 @@ troubleshooting guidance.
 See [Runtime Compatibility](docs/runtime-compatibility.md) for the supported
 environments, what the automated probes cover, and integration guidance.
 
+See [SDK Threat Model](docs/threat-model.md) for secret handling, privileged-action boundaries, dashboard/compliance assumptions, and network failure guidance.
+
 For step-by-step instructions on reproducing and fixing CI check failures, see the [CI Resolution Workflow](docs/ci-resolution-workflow.md).
 
 ## Contributing
