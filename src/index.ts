@@ -43,6 +43,13 @@ export {
 export { resolveClientConfig } from './config/validate';
 export { AEGIS_ENVIRONMENTS, getEnvironmentPreset } from './config/environments';
 export * from './types/portfolio';
+export {
+  normalizePortfolioHolding,
+  normalizeInvestorPortfolio,
+  formatPortfolioBalance,
+  getPortfolioHoldingDisplayLabel,
+} from './investor/normalizer';
+export * from './types/portfolio-normalizer';
 export * from './errors/portfolio';
 export * from './types/role';
 export * from './errors/role';
