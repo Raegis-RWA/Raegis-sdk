@@ -34,6 +34,11 @@ export {
   buildAdminTransactionExplorerUrl,
   normalizeAdminActionStatus,
 } from './admin/receipts';
+export {
+  buildTransactionReceipt,
+  buildTransactionExplorerUrl,
+  normalizeTransactionReceiptStatus,
+} from './transactions/receipts';
 export { classifyNetworkFailure } from './network/failures';
 export {
   buildNetworkFailureDiagnostic,
@@ -47,6 +52,7 @@ export * from './errors/portfolio';
 export * from './types/role';
 export * from './errors/role';
 export * from './types/admin-receipt';
+export * from './types/transaction-receipt';
 export * from './errors/network';
 export * from './errors/config';
 export * from './types/contract-event';

@@ -1,3 +1,10 @@
+import {
+  TransactionReceiptError,
+  TransactionReceiptErrorCode,
+  TransactionReceiptStatus,
+  TransactionReceiptStatusInput,
+} from './transaction-receipt';
+
 export type AdminActionOperation =
   | 'whitelist-add'
   | 'whitelist-remove'
@@ -6,19 +13,8 @@ export type AdminActionOperation =
   | 'protocol-unpause'
   | 'asset-mint';
 
-export type AdminActionStatus = 'success' | 'pending' | 'failed' | 'unknown';
-
-export type AdminTransactionStatusInput =
-  | AdminActionStatus
-  | 'SUCCESS'
-  | 'CONFIRMED'
-  | 'PENDING'
-  | 'DUPLICATE'
-  | 'NOT_FOUND'
-  | 'FAILED'
-  | 'ERROR'
-  | 'TRY_AGAIN_LATER'
-  | 'UNKNOWN';
+export type AdminActionStatus = TransactionReceiptStatus;
+export type AdminTransactionStatusInput = TransactionReceiptStatusInput;
 
 export interface AdminReceiptCommonInput {
   status: AdminTransactionStatusInput | string;
@@ -32,29 +28,19 @@ export interface AdminReceiptCommonInput {
 export type AdminActionReceiptInput =
   | (AdminReceiptCommonInput & {
       operation: 'whitelist-add' | 'whitelist-remove';
-      target: {
-        address: string;
-      };
+      target: { address: string };
     })
   | (AdminReceiptCommonInput & {
       operation: 'asset-register';
-      target: {
-        assetId: string;
-      };
+      target: { assetId: string };
     })
   | (AdminReceiptCommonInput & {
       operation: 'protocol-pause' | 'protocol-unpause';
-      target: {
-        contractId: string;
-      };
+      target: { contractId: string };
     })
   | (AdminReceiptCommonInput & {
       operation: 'asset-mint';
-      target: {
-        assetId: string;
-        recipient: string;
-        amount: string;
-      };
+      target: { assetId: string; recipient: string; amount: string };
     });
 
 export interface AdminActionReceipt<
@@ -70,21 +56,11 @@ export interface AdminActionReceipt<
   failureCode?: string;
 }
 
-export type AdminReceiptErrorCode =
-  | 'INVALID_TARGET'
-  | 'INVALID_AMOUNT'
-  | 'INVALID_TRANSACTION_HASH'
-  | 'MISSING_TRANSACTION_HASH'
-  | 'INVALID_TIMESTAMP'
-  | 'INVALID_EXPLORER_URL'
-  | 'INVALID_FAILURE_CODE';
+export type AdminReceiptErrorCode = TransactionReceiptErrorCode;
 
-export class AdminReceiptError extends Error {
-  public readonly code: AdminReceiptErrorCode;
-
+export class AdminReceiptError extends TransactionReceiptError {
   constructor(code: AdminReceiptErrorCode, message: string) {
-    super(message);
+    super(code, message);
     this.name = 'AdminReceiptError';
-    this.code = code;
   }
 }

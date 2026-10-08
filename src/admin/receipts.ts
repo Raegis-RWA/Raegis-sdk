@@ -1,4 +1,3 @@
-import { Networks } from '@stellar/stellar-sdk';
 import {
   AdminActionReceipt,
   AdminActionReceiptInput,
@@ -6,32 +5,16 @@ import {
   AdminReceiptError,
   AdminTransactionStatusInput,
 } from '../types/admin-receipt';
+import {
+  buildTransactionExplorerUrlCore,
+  isPositiveReceiptAmount,
+  normalizeReceiptFailureCodeCore,
+  normalizeReceiptObservedAtCore,
+  normalizeTransactionHashCore,
+  normalizeTransactionReceiptStatusCore,
+} from '../transactions/receipt-core';
 
-const TRANSACTION_HASH_PATTERN = /^[a-fA-F0-9]{64}$/;
-const FAILURE_CODE_PATTERN = /^[A-Z0-9][A-Z0-9_.:-]{0,63}$/;
-const POSITIVE_AMOUNT_PATTERN = /^(?:0*[1-9]\d*)(?:\.\d+)?$|^0*\.\d*[1-9]\d*$/;
-
-const EXPLORER_TRANSACTION_BASES: Readonly<Record<string, string>> = {
-  [Networks.PUBLIC]: 'https://stellar.expert/explorer/public/tx',
-  [Networks.TESTNET]: 'https://stellar.expert/explorer/testnet/tx',
-  [Networks.FUTURENET]: 'https://stellar.expert/explorer/futurenet/tx',
-};
-
-const STATUS_ALIASES: Readonly<Record<string, AdminActionStatus>> = {
-  SUCCESS: 'success',
-  CONFIRMED: 'success',
-  PENDING: 'pending',
-  DUPLICATE: 'pending',
-  NOT_FOUND: 'pending',
-  FAILED: 'failed',
-  ERROR: 'failed',
-  TRY_AGAIN_LATER: 'unknown',
-  UNKNOWN: 'unknown',
-};
-
-const OPERATION_LABELS: Readonly<
-  Record<AdminActionReceiptInput['operation'], string>
-> = {
+const OPERATION_LABELS: Readonly<Record<AdminActionReceiptInput['operation'], string>> = {
   'whitelist-add': 'Whitelist addition',
   'whitelist-remove': 'Whitelist removal',
   'asset-register': 'Asset registration',
@@ -47,53 +30,41 @@ const STATUS_LABELS: Readonly<Record<AdminActionStatus, string>> = {
   unknown: 'has an unknown outcome',
 };
 
-/**
- * Maps SDK and Soroban RPC transaction states to the stable receipt status model.
- * Unrecognised values remain `unknown` instead of being presented as successful.
- */
+const adminReceiptError = (
+  code: ConstructorParameters<typeof AdminReceiptError>[0],
+  message: string,
+): AdminReceiptError => new AdminReceiptError(code, message);
+
 export function normalizeAdminActionStatus(
   status: AdminTransactionStatusInput | string,
 ): AdminActionStatus {
-  const normalized = status.trim().toUpperCase();
-  return STATUS_ALIASES[normalized] ?? 'unknown';
+  return normalizeTransactionReceiptStatusCore(status);
 }
 
-/**
- * Builds a network-aware transaction explorer URL.
- *
- * Public, Testnet, and Futurenet use Stellar Expert. Custom networks only
- * receive a link when the caller supplies an explicit HTTPS explorer base URL.
- */
 export function buildAdminTransactionExplorerUrl(
   transactionHash: string | null | undefined,
   networkPassphrase: string,
   explorerBaseUrl?: string,
 ): string | null {
-  if (!transactionHash) {
-    return null;
-  }
-
-  const normalizedHash = normalizeTransactionHash(transactionHash);
-  const standardBase = EXPLORER_TRANSACTION_BASES[networkPassphrase];
-  const base = standardBase ?? normalizeCustomExplorerBase(explorerBaseUrl);
-
-  return base ? `${base}/${normalizedHash}` : null;
+  return buildTransactionExplorerUrlCore(
+    transactionHash,
+    networkPassphrase,
+    explorerBaseUrl,
+    adminReceiptError,
+  );
 }
 
-/**
- * Creates a serialisable, UI-facing admin receipt from a deliberately narrow
- * input model. Raw RPC responses, signatures, secrets, and arbitrary metadata
- * are not copied into the returned receipt.
- */
 export function buildAdminActionReceipt<TInput extends AdminActionReceiptInput>(
   input: TInput,
 ): AdminActionReceipt<TInput> {
-  validateTarget(input);
+  const safeTarget = snapshotTarget(input);
+  validateTarget(safeTarget as AdminActionReceiptInput);
 
   const status = normalizeAdminActionStatus(input.status);
-  const transactionHash = input.transactionHash
-    ? normalizeTransactionHash(input.transactionHash)
-    : null;
+  const transactionHash =
+    input.transactionHash == null
+      ? null
+      : normalizeTransactionHashCore(input.transactionHash, adminReceiptError);
 
   if (status === 'success' && !transactionHash) {
     throw new AdminReceiptError(
@@ -102,12 +73,12 @@ export function buildAdminActionReceipt<TInput extends AdminActionReceiptInput>(
     );
   }
 
-  const observedAt = normalizeObservedAt(input.observedAt);
-  const failureCode = normalizeFailureCode(input.failureCode);
+  const observedAt = normalizeReceiptObservedAtCore(input.observedAt, adminReceiptError);
+  const failureCode = normalizeReceiptFailureCodeCore(input.failureCode, adminReceiptError);
 
   const receipt: AdminActionReceipt<TInput> = {
-    operation: input.operation,
-    target: cloneTarget(input),
+    operation: safeTarget.operation as TInput['operation'],
+    target: safeTarget.target as TInput['target'],
     status,
     transactionHash,
     explorerUrl: buildAdminTransactionExplorerUrl(
@@ -116,70 +87,11 @@ export function buildAdminActionReceipt<TInput extends AdminActionReceiptInput>(
       input.explorerBaseUrl,
     ),
     observedAt,
-    summary: `${OPERATION_LABELS[input.operation]} ${STATUS_LABELS[status]}.`,
+    summary: `${OPERATION_LABELS[safeTarget.operation]} ${STATUS_LABELS[status]}.`,
     ...(failureCode ? { failureCode } : {}),
   };
 
   return Object.freeze(receipt);
-}
-
-function normalizeTransactionHash(transactionHash: string): string {
-  const normalizedHash = transactionHash.trim().toLowerCase();
-  if (!TRANSACTION_HASH_PATTERN.test(normalizedHash)) {
-    throw new AdminReceiptError(
-      'INVALID_TRANSACTION_HASH',
-      'Transaction hash must contain exactly 64 hexadecimal characters.',
-    );
-  }
-  return normalizedHash;
-}
-
-function normalizeCustomExplorerBase(explorerBaseUrl?: string): string | null {
-  if (!explorerBaseUrl) {
-    return null;
-  }
-
-  try {
-    const parsed = new URL(explorerBaseUrl);
-    if (parsed.protocol !== 'https:') {
-      throw new Error('Explorer URL must use HTTPS.');
-    }
-    return parsed.toString().replace(/\/+$/, '');
-  } catch {
-    throw new AdminReceiptError(
-      'INVALID_EXPLORER_URL',
-      'Custom explorer base URL must be a valid HTTPS URL.',
-    );
-  }
-}
-
-function normalizeObservedAt(observedAt?: Date | string): string {
-  const date =
-    observedAt instanceof Date
-      ? observedAt
-      : new Date(observedAt ?? Date.now());
-  if (Number.isNaN(date.getTime())) {
-    throw new AdminReceiptError(
-      'INVALID_TIMESTAMP',
-      'Receipt timestamp must be a valid date.',
-    );
-  }
-  return date.toISOString();
-}
-
-function normalizeFailureCode(failureCode?: string): string | undefined {
-  if (!failureCode) {
-    return undefined;
-  }
-
-  const normalized = failureCode.trim().toUpperCase();
-  if (!FAILURE_CODE_PATTERN.test(normalized)) {
-    throw new AdminReceiptError(
-      'INVALID_FAILURE_CODE',
-      'Failure code must be 1-64 safe uppercase identifier characters.',
-    );
-  }
-  return normalized;
 }
 
 function validateTarget(input: AdminActionReceiptInput): void {
@@ -204,7 +116,7 @@ function validateTarget(input: AdminActionReceiptInput): void {
     case 'asset-mint':
       requireValue(input.target.assetId, 'Asset identifier');
       requireValue(input.target.recipient, 'Mint recipient');
-      if (!POSITIVE_AMOUNT_PATTERN.test(input.target.amount.trim())) {
+      if (!isPositiveReceiptAmount(input.target.amount)) {
         throw new AdminReceiptError(
           'INVALID_AMOUNT',
           'Mint amount must be a positive decimal string.',
@@ -213,8 +125,73 @@ function validateTarget(input: AdminActionReceiptInput): void {
   }
 }
 
-function cloneTarget<TInput extends AdminActionReceiptInput>(
-  input: TInput,
-): TInput['target'] {
-  return Object.freeze({ ...input.target }) as TInput['target'];
+const ADMIN_TARGET_FIELDS: Readonly<
+  Record<AdminActionReceiptInput['operation'], readonly string[]>
+> = {
+  'whitelist-add': ['address'],
+  'whitelist-remove': ['address'],
+  'asset-register': ['assetId'],
+  'protocol-pause': ['contractId'],
+  'protocol-unpause': ['contractId'],
+  'asset-mint': ['assetId', 'recipient', 'amount'],
+};
+
+function snapshotTarget(
+  input: AdminActionReceiptInput,
+): Pick<AdminActionReceiptInput, 'operation' | 'target'> {
+  try {
+    if (input === null || typeof input !== 'object' || Array.isArray(input)) {
+      throw new AdminReceiptError(
+        'INVALID_TARGET',
+        'Admin receipt input must be an object with an own target.',
+      );
+    }
+
+    const operationDescriptor = Object.getOwnPropertyDescriptor(input, 'operation');
+    const targetDescriptor = Object.getOwnPropertyDescriptor(input, 'target');
+    if (
+      !operationDescriptor ||
+      !('value' in operationDescriptor) ||
+      !targetDescriptor ||
+      !('value' in targetDescriptor)
+    ) {
+      throw new AdminReceiptError(
+        'INVALID_TARGET',
+        'Admin receipt operation and target must be own data properties.',
+      );
+    }
+
+    const operation = operationDescriptor.value as AdminActionReceiptInput['operation'];
+    const fields = ADMIN_TARGET_FIELDS[operation];
+    const target = targetDescriptor.value;
+    if (!fields || target === null || typeof target !== 'object' || Array.isArray(target)) {
+      throw new AdminReceiptError(
+        'INVALID_TARGET',
+        'Admin receipt target must match a supported operation.',
+      );
+    }
+
+    const values: Record<string, unknown> = {};
+    for (const field of fields) {
+      const descriptor = Object.getOwnPropertyDescriptor(target, field);
+      if (!descriptor || !('value' in descriptor)) {
+        throw new AdminReceiptError(
+          'INVALID_TARGET',
+          `Admin receipt target field ${field} must be an own data property.`,
+        );
+      }
+      values[field] = descriptor.value;
+    }
+
+    return {
+      operation,
+      target: Object.freeze(values) as AdminActionReceiptInput['target'],
+    };
+  } catch (error) {
+    if (error instanceof AdminReceiptError) throw error;
+    throw new AdminReceiptError(
+      'INVALID_TARGET',
+      'Admin receipt target cannot be safely inspected.',
+    );
+  }
 }

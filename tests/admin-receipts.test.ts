@@ -95,10 +95,79 @@ describe('Admin action receipts', () => {
     expect(JSON.stringify(receipt)).not.toContain('SENSITIVE');
   });
 
+  it('snapshots only approved own target fields without invoking accessors', () => {
+    let reads = 0;
+    const accessorTarget = {
+      assetId: 'RWA-1',
+      recipient: 'GRECIPIENT',
+      get amount(): string {
+        reads += 1;
+        return '125.50';
+      },
+    };
+    expect(() =>
+      buildAdminActionReceipt({
+        operation: 'asset-mint',
+        target: accessorTarget,
+        status: 'PENDING',
+        networkPassphrase: Networks.TESTNET,
+      }),
+    ).toThrow(expect.objectContaining({ code: 'INVALID_TARGET' }));
+    expect(reads).toBe(0);
+
+    const inheritedTarget = Object.create({ assetId: 'USDC:GISSUER' }) as {
+      assetId: string;
+    };
+    expect(() =>
+      buildAdminActionReceipt({
+        operation: 'asset-register',
+        target: inheritedTarget,
+        status: 'PENDING',
+        networkPassphrase: Networks.TESTNET,
+      }),
+    ).toThrow(expect.objectContaining({ code: 'INVALID_TARGET' }));
+
+    const mutableTarget = {
+      assetId: 'RWA-1',
+      recipient: 'GRECIPIENT',
+      amount: '125.50',
+      secret: 'DO_NOT_COPY',
+    };
+    const receipt = buildAdminActionReceipt({
+      operation: 'asset-mint',
+      target: mutableTarget,
+      status: 'PENDING',
+      networkPassphrase: Networks.TESTNET,
+    });
+    mutableTarget.amount = '999';
+
+    expect(receipt.target).toEqual({
+      assetId: 'RWA-1',
+      recipient: 'GRECIPIENT',
+      amount: '125.50',
+    });
+    expect(receipt.target).not.toHaveProperty('secret');
+    expect(Object.isFrozen(receipt.target)).toBe(true);
+  });
+
   it('rejects malformed hashes and successful receipts without a hash', () => {
     expect(() =>
       buildAdminTransactionExplorerUrl('not-a-hash', Networks.PUBLIC),
     ).toThrow(AdminReceiptError);
+
+    expect(() =>
+      buildAdminActionReceipt({
+        operation: 'asset-register',
+        target: { assetId: 'USDC:GISSUER' },
+        status: 'PENDING',
+        transactionHash: '',
+        networkPassphrase: Networks.TESTNET,
+      }),
+    ).toThrow(
+      expect.objectContaining({
+        code: 'INVALID_TRANSACTION_HASH',
+      }),
+    );
 
     expect(() =>
       buildAdminActionReceipt({
