@@ -85,6 +85,22 @@ const capability = await aegis.role.checkCapability('G_USER_PUBLIC_KEY', 'receiv
 console.log('Can receive transfer?', capability.isPermitted);
 ```
 
+## Compliance Readiness
+Use the typed readiness model when dashboard UX needs more than a whitelist boolean.
+Only `approved` is eligible; blocked, revoked, pending, unknown, and unavailable states
+stay distinct so the UI can explain or retry them safely.
+
+```typescript
+const readiness = await aegis.compliance.checkReadiness('G_USER_PUBLIC_KEY');
+if (readiness.state === 'approved') {
+  // Enable the restricted-action UX; the contract still authorizes the real operation.
+}
+```
+
+See [Compliance Readiness](./docs/compliance-readiness.md) for state semantics,
+stable reason codes, retry guidance, dashboard integration, and the boundary between
+protocol-visible status and off-chain legal/KYC determinations.
+
 ## Contract Event Decoder
 Decode Soroban contract events into typed audit-trail models for dashboards and indexers.
 

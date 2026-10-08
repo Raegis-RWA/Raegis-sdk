@@ -42,10 +42,10 @@ public async checkWhitelist(address: string): Promise<boolean>
 * `address` (string): The Stellar public key (`G...`) to check.
 
 **Returns**
-`Promise<boolean>` — `true` if the simulated call to `is_whitelisted` succeeds and decodes to `true`. Resolves to `false` both when the contract reports the address is not whitelisted, *and* when the simulation does not succeed or returns no result — the current implementation does not distinguish those two cases in its return value.
+`Promise<boolean>` — `true` if the simulated call to `is_whitelisted` succeeds and its parsed `ScVal` decodes to boolean `true`. Resolves to `false` when the contract reports the address is not whitelisted, when simulation does not succeed or returns no result, or when ledger restoration is still required. This method does not distinguish those cases in its return value.
 
 **Errors**
-* If `simulateTransaction` itself throws (network failure, malformed request, etc.), the error is logged via `console.error` and then re-thrown as-is. It is the raw error from the underlying `@stellar/stellar-sdk` RPC call — `checkWhitelist` does not wrap it in `PortfolioError` or any other typed error.
+* Source-account lookup, transaction construction, and RPC failures inside `runNetworkOperation` reject with a classified `NetworkFailure`. Invalid contract/address arguments or return-value decoding can also throw. The method does not log errors or wrap them in `PortfolioError`.
 * A failed/unsuccessful simulation that does *not* throw is swallowed and reported as `false` (see Returns above), not as an error.
 
 **Example**
@@ -63,12 +63,48 @@ try {
   const isWhitelisted = await client.compliance.checkWhitelist('G_USER_PUBLIC_KEY');
   console.log('Is User Whitelisted?', isWhitelisted);
 } catch (error) {
-  // Raised on RPC/network failure during simulation — not a PortfolioError.
+  // Account lookup or simulation can fail; this is not a PortfolioError.
   console.error('Whitelist check failed:', error);
 }
 ```
 
-> **Open note:** `checkWhitelist` passes the raw invocation object returned by `contract.call(...)` directly as the `transaction` field to `simulateTransaction` (cast through `as any`), rather than assembling a full `Transaction` via `TransactionBuilder` the way `AssetModule.mint`/`transfer` do. The source itself flags this with a comment ("Cast required depending on SDK version wrapper"), so the exact request shape expected by `simulateTransaction` across `@stellar/stellar-sdk` versions is not fully confirmed — verify against the installed SDK version rather than assuming it's stable.
+Both compliance methods build an unsigned `Transaction` containing the read-only
+`is_whitelisted` invocation, using `BASE_FEE`, the client's network passphrase,
+and a 30-second timeout. The source account is fetched from the configured
+keypair's public key, or from the checked address when no keypair is configured.
+That source must exist on the selected network. A missing/unfunded source causes
+`checkReadiness` to return `unavailable` and `checkWhitelist` to reject. Neither
+method signs or submits a transaction; the configured keypair supplies only its
+public key for the read.
+
+### `checkReadiness(address: string): Promise<ComplianceReadinessResult>`
+
+**Parameters**
+* `address` (string): A Stellar Ed25519 public key (`G...`).
+
+**Returns**
+A typed result containing `state`, `eligible`, `verified`, `code`, `reason`,
+`address`, and `checkedAt`. Successful boolean reads map to `approved` or
+`blocked`; unexpected return values map to verified `unknown`. Unsuccessful,
+result-less, restoration-required, or throwing reads return `unavailable` with
+`verified: false`. Invalid addresses return unverified `unknown` with
+`INVALID_ADDRESS` without calling RPC. Only `approved` has `eligible: true`.
+
+**Errors**
+RPC and decode failures are represented by `unavailable`; raw error details do
+not appear in the result. This method does not inherit the ambiguous `false`
+fallback from `checkWhitelist`.
+
+**Example**
+```typescript
+const readiness = await client.compliance.checkReadiness('G_USER_PUBLIC_KEY');
+if (readiness.state === 'unavailable') {
+  // Offer a read retry; do not infer rejection or resubmit a transaction.
+}
+```
+
+See [Compliance Readiness](./compliance-readiness.md) for state semantics,
+reason codes, dashboard integration, and protocol-only limitations.
 
 ---
 
@@ -198,4 +234,5 @@ Soroban transactions and RPC queries can fail for several reasons. The SDK manag
 3. **XDR Parsing Errors:** If the contract returns data that does not match the expected return type.
 4. **Safe Read Model Fallbacks:** Portfolio queries intercept network/RPC failures and return an `InvestorPortfolio` with `status: 'unavailable'` to prevent frontend application crashes.
 
-> **Open note:** as described above under [Exported Types & Errors](#exported-types--errors-srcindexts), point 4 (safe fallbacks) matches what `InvestorModule.getPortfolio` does today, but `PortfolioError` itself is not currently thrown by `checkWhitelist`, `mint`, or `transfer` — those surface plain `Error` objects instead. Treat this section as the intended error-handling strategy for the SDK rather than a description of every method's current exact error type.
+> **Open note:** as described above under [Exported Types & Errors](#exported-types--errors-srcindexts), point 4 (safe fallbacks) matches what `InvestorModule.getPortfolio` does today, but `PortfolioError` itself is not currently thrown by `checkWhitelist`, `mint`, or `transfer`. The compliance read uses classified `NetworkFailure` errors for network operations and can also expose argument/decode errors; the asset methods surface plain `Error` objects. Treat this section as the intended error-handling strategy for the SDK rather than a description of every method's current exact error type.
+
