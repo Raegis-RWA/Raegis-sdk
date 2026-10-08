@@ -61,6 +61,11 @@ See [Role-Aware Client Factory](./docs/role-aware-client-factory.md) for the
 full capability matrix, `compliance-operator` usage, error handling, and
 security notes.
 
+Transfers support an explicit preflight through `asset.buildTransferIntent()`
+and `asset.submitTransferIntent()`. The existing `asset.transfer()` method
+uses the same path. See
+[Compliant Transfer Intents](./docs/compliant-transfer-intents.md).
+
 For direct `AegisClient` construction (advanced / custom setups):
 
 ```typescript
