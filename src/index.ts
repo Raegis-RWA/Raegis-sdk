@@ -40,6 +40,14 @@ export {
   NetworkFailureDiagnostic,
   NetworkRecoveryAction,
 } from './diagnostics/network';
+export { diagnoseConfig, ConfigDiagnostics, ConfigDiagnosticsStatus, RpcUrlDiagnostic } from './diagnostics/config';
+export { buildRuntimeDiagnostics, RuntimeDiagnostics, RpcReachability } from './diagnostics/runtime';
+export {
+  classifyComplianceFailure,
+  ComplianceFailureClassification,
+  ComplianceFailureDomain,
+} from './diagnostics/compliance';
+export { buildDiagnosticsReport, AegisDiagnosticsReport, DiagnosticsReportInput } from './diagnostics/report';
 export { resolveClientConfig } from './config/validate';
 export { AEGIS_ENVIRONMENTS, getEnvironmentPreset } from './config/environments';
 export * from './types/portfolio';
