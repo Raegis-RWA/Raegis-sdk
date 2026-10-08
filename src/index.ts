@@ -51,5 +51,8 @@ export * from './errors/network';
 export * from './errors/config';
 export * from './types/contract-event';
 export * from './errors/event';
+export * from './types/asset-metadata';
+export * from './errors/asset-metadata';
+export * from './rwa/metadata';
 export type { AegisEnvironmentName, AegisEnvironmentPreset } from './config/environments';
 export type { ResolvedAegisConfig } from './config/validate';
