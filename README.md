@@ -104,6 +104,24 @@ if (event.kind === 'transfer') {
 
 See [Contract Event Decoder](./docs/contract-events.md) for supported topics, unknown fallback behaviour, and dashboard integration guidance.
 
+## Safe SDK Diagnostics
+
+Create a deterministic support report without exposing raw RPC URLs, network
+passphrases, contract identifiers, signer material, or raw error messages:
+
+```typescript
+const report = aegis.buildDiagnosticsReport({
+  recentErrors: [lastSdkError],
+});
+
+console.log(JSON.stringify(report, null, 2));
+```
+
+The report describes configuration and module readiness only. It does not make a
+live RPC request and it does not establish protocol whitelist state, KYC/AML
+completion, or legal eligibility. See [SDK Diagnostics Report](./docs/diagnostics-report.md)
+for field semantics, redaction rules, and support guidance.
+
 ## Testing
 To run the SDK unit tests locally:
 

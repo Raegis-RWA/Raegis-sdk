@@ -10,10 +10,21 @@ import {
   buildNetworkFailureDiagnostic,
   NetworkFailureDiagnostic,
 } from './diagnostics/network';
+import {
+  buildSdkDiagnosticsReport,
+  AegisSdkDiagnosticsReport,
+  BuildSdkDiagnosticsInput,
+  SdkDiagnosticsOptions,
+} from './diagnostics/report';
 
 export type { AegisClientConfig };
 
 export class AegisClient {
+  private readonly diagnosticsConfig: Omit<
+    BuildSdkDiagnosticsInput,
+    'complianceAvailable'
+  >;
+
   public rpcServer: rpc.Server;
   public contractId: string;
   public networkPassphrase: string;
@@ -34,6 +45,14 @@ export class AegisClient {
   constructor(config: AegisClientConfig) {
     const resolved = resolveClientConfig(config);
     const allowHttp = resolved.rpcUrl.startsWith('http://');
+
+    this.diagnosticsConfig = {
+      environment: config.environment,
+      rpcUrl: resolved.rpcUrl,
+      networkPassphrase: resolved.networkPassphrase,
+      contractId: resolved.contractId,
+      signerConfigured: resolved.keypair !== undefined,
+    };
 
     this.rpcServer = new rpc.Server(resolved.rpcUrl, { allowHttp });
     this.contractId = resolved.contractId;
@@ -77,5 +96,24 @@ export class AegisClient {
    */
   public diagnoseNetworkFailure(error: unknown): NetworkFailureDiagnostic {
     return buildNetworkFailureDiagnostic(error);
+  }
+
+  /**
+   * Builds a deterministic support report that omits raw RPC URLs, network
+   * passphrases, contract identifiers, signer material, and raw error details.
+   *
+   * This reports configuration/module readiness only. It does not perform live
+   * RPC or compliance checks and must not be treated as legal/KYC status.
+   */
+  public buildDiagnosticsReport(
+    options: SdkDiagnosticsOptions = {},
+  ): AegisSdkDiagnosticsReport {
+    return buildSdkDiagnosticsReport(
+      {
+        ...this.diagnosticsConfig,
+        complianceAvailable: Boolean(this.compliance),
+      },
+      options,
+    );
   }
 }

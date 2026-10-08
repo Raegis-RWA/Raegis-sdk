@@ -16,6 +16,16 @@ export interface NetworkFailureDiagnostic {
   retryAfterSeconds?: number;
 }
 
+const SAFE_DIAGNOSTIC_MESSAGES: Readonly<Record<NetworkFailureCode, string>> = {
+  TIMEOUT: 'The network request timed out.',
+  RPC_UNAVAILABLE: 'The Stellar RPC service is temporarily unavailable.',
+  RATE_LIMITED: 'The Stellar RPC service is rate limiting requests.',
+  INVALID_NETWORK_PASSPHRASE:
+    'The configured network does not match the target transaction.',
+  MALFORMED_RESPONSE: 'The Stellar RPC service returned an invalid response.',
+  UNKNOWN: 'The network request failed for an unknown reason.',
+};
+
 const RECOVERY_ACTIONS: Readonly<
   Record<NetworkFailureCode, NetworkRecoveryAction>
 > = {
@@ -38,7 +48,7 @@ export function buildNetworkFailureDiagnostic(
 
   return Object.freeze({
     code: failure.code,
-    message: failure.message,
+    message: SAFE_DIAGNOSTIC_MESSAGES[failure.code],
     retryable: failure.retryable,
     action: RECOVERY_ACTIONS[failure.code],
     ...(failure.retryAfterSeconds !== undefined

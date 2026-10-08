@@ -23,6 +23,25 @@ Either `environment` or both `rpcUrl` and `networkPassphrase` must be provided. 
 * `client.role`: Role discovery & capability checks module (`RoleModule`). See [Role Discovery & Capability Checks Documentation](./role-discovery.md).
 * `client.events`: Contract event fetch/decode module (`EventsModule`). See [Contract Event Decoder Documentation](./contract-events.md).
 
+### `buildDiagnosticsReport(options?): AegisSdkDiagnosticsReport`
+
+Builds a deterministic support snapshot from the client's already-validated
+configuration and optional recent SDK errors.
+
+The report includes coarse environment/RPC/network/contract/signer state,
+compliance-module readiness, and up to five sanitized recent errors. It omits
+raw RPC URLs, network passphrases, full contract identifiers, signer material,
+raw error messages, causes, and RPC payloads.
+
+`network.status: "not-checked"` means no live health assertion was made.
+Supplying a recent typed `NetworkFailure` changes that status to `"degraded"`
+and includes the existing safe network diagnostic. Compliance readiness reports
+module/configuration availability only; it does not assert whitelist, KYC/AML,
+or legal status.
+
+See [SDK Diagnostics Report](./diagnostics-report.md) for the redaction boundary
+and support workflow.
+
 ---
 
 ## `ComplianceModule`

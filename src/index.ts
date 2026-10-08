@@ -40,6 +40,17 @@ export {
   NetworkFailureDiagnostic,
   NetworkRecoveryAction,
 } from './diagnostics/network';
+export { buildSdkDiagnosticsReport } from './diagnostics/report';
+export type {
+  AegisSdkDiagnosticsReport,
+  BuildSdkDiagnosticsInput,
+  DiagnosticsErrorCategory,
+  DiagnosticsEnvironment,
+  DiagnosticsNetworkStatus,
+  DiagnosticsRpcTransport,
+  SafeDiagnosticError,
+  SdkDiagnosticsOptions,
+} from './diagnostics/report';
 export { resolveClientConfig } from './config/validate';
 export { AEGIS_ENVIRONMENTS, getEnvironmentPreset } from './config/environments';
 export * from './types/portfolio';
