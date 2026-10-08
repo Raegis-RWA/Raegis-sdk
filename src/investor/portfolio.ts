@@ -1,4 +1,4 @@
-import { Contract, nativeToScVal, rpc } from '@stellar/stellar-sdk';
+import { Contract, nativeToScVal, rpc, StrKey } from '@stellar/stellar-sdk';
 import { AegisClient } from '../client';
 import {
   InvestorPortfolio,
@@ -8,6 +8,7 @@ import {
   FetchPortfolioOptions,
   TransferEligibility,
 } from '../types/portfolio';
+import { InvestorTransferEligibility } from '../types/transfer-eligibility';
 import { PortfolioError } from '../errors/portfolio';
 import { parseSorobanResult } from '../utils/xdr-parser';
 
@@ -19,6 +20,92 @@ export class InvestorModule {
 
   constructor(client: AegisClient) {
     this.client = client;
+  }
+
+  /**
+   * Performs a read-only protocol whitelist preflight for a proposed investor transfer.
+   *
+   * This does not check balances, sign, simulate, or submit a transfer. Contract
+   * authorization remains authoritative.
+   */
+  public async checkTransferEligibility(
+    source: string,
+    destination: string,
+    amount: number,
+  ): Promise<InvestorTransferEligibility> {
+    const observedAt = new Date().toISOString();
+    const result = (
+      state: InvestorTransferEligibility['state'],
+      code: InvestorTransferEligibility['code'],
+      reason?: string,
+    ): InvestorTransferEligibility => ({
+      source,
+      destination,
+      amount,
+      state,
+      isEligible: state === 'eligible',
+      code,
+      reason,
+      observedAt,
+    });
+
+    if (typeof source !== 'string' || !StrKey.isValidEd25519PublicKey(source)) {
+      return result('ineligible', 'INVALID_SOURCE_ADDRESS', 'Source must be a Stellar account public key.');
+    }
+    if (typeof destination !== 'string' || !StrKey.isValidEd25519PublicKey(destination)) {
+      return result('ineligible', 'INVALID_DESTINATION_ADDRESS', 'Destination must be a Stellar account public key.');
+    }
+    if (typeof amount !== 'number' || !Number.isFinite(amount) || amount <= 0) {
+      return result('ineligible', 'INVALID_AMOUNT', 'Amount must be a positive finite number.');
+    }
+
+    // Observation results can arrive through adapters or caches. Never treat a
+    // response for another account, a malformed state, or a contradictory
+    // whitelist boolean/code as proof that THIS account is approved.
+    const observeVerified = async (address: string): Promise<
+      'approved' | 'not_approved' | 'unknown' | 'unavailable'
+    > => {
+      try {
+        const value = await this.client.compliance.observeWhitelist(address);
+        if (!value || value.address !== address) return 'unknown';
+        if (value.state === 'approved' &&
+            value.isWhitelisted === true &&
+            value.code === 'WHITELIST_APPROVED') return 'approved';
+        if (value.state === 'not_approved' &&
+            value.isWhitelisted === false &&
+            value.code === 'WHITELIST_NOT_APPROVED') return 'not_approved';
+        if (value.state === 'unavailable' &&
+            value.isWhitelisted === null &&
+            value.code === 'WHITELIST_QUERY_FAILED') return 'unavailable';
+        return 'unknown';
+      } catch {
+        return 'unavailable';
+      }
+    };
+
+    const sourceStatus = await observeVerified(source);
+    if (sourceStatus === 'not_approved') {
+      return result('ineligible', 'SOURCE_NOT_WHITELISTED', 'Source is not whitelisted by the protocol.');
+    }
+    if (sourceStatus === 'unknown') {
+      return result('unknown', 'SOURCE_STATUS_UNKNOWN', 'Source whitelist status could not be determined.');
+    }
+    if (sourceStatus === 'unavailable') {
+      return result('unavailable', 'SOURCE_QUERY_FAILED', 'Source whitelist query was unavailable.');
+    }
+
+    const destinationStatus = await observeVerified(destination);
+    if (destinationStatus === 'not_approved') {
+      return result('ineligible', 'DESTINATION_NOT_WHITELISTED', 'Destination is not whitelisted by the protocol.');
+    }
+    if (destinationStatus === 'unknown') {
+      return result('unknown', 'DESTINATION_STATUS_UNKNOWN', 'Destination whitelist status could not be determined.');
+    }
+    if (destinationStatus === 'unavailable') {
+      return result('unavailable', 'DESTINATION_QUERY_FAILED', 'Destination whitelist query was unavailable.');
+    }
+
+    return result('eligible', 'ELIGIBLE');
   }
 
   /**

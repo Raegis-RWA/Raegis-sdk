@@ -85,6 +85,26 @@ const capability = await aegis.role.checkCapability('G_USER_PUBLIC_KEY', 'receiv
 console.log('Can receive transfer?', capability.isPermitted);
 ```
 
+## Investor Transfer Eligibility
+
+Use the read-only transfer preflight when a UI or workflow needs a typed protocol
+whitelist decision before attempting a transfer:
+
+```typescript
+const eligibility = await aegis.investor.checkTransferEligibility(
+  'G_SOURCE_PUBLIC_KEY',
+  'G_DESTINATION_PUBLIC_KEY',
+  100,
+);
+```
+
+The preflight validates inputs before network work, checks the source before the
+destination, and preserves unknown/unavailable protocol state instead of inferring
+approval. It does not check balances, sign, simulate, or submit a transfer.
+
+See [Investor Transfer Eligibility](./docs/transfer-eligibility.md) for result codes,
+edge cases, and the protocol/legal boundary.
+
 ## Contract Event Decoder
 Decode Soroban contract events into typed audit-trail models for dashboards and indexers.
 

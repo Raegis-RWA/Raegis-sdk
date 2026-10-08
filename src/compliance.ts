@@ -1,5 +1,6 @@
 import { Contract, nativeToScVal, rpc } from '@stellar/stellar-sdk';
 import { AegisClient } from './client';
+import { WhitelistObservation } from './types/transfer-eligibility';
 import { parseSorobanResult } from './utils/xdr-parser';
 
 export class ComplianceModule {
@@ -33,5 +34,74 @@ constructor(client: AegisClient) {
        return parseSorobanResult(result.result.retval as any) as boolean;
     }
     return false;
+  }
+
+  /**
+   * Observes whitelist state without collapsing an unsuccessful simulation into
+   * the same value as an explicit contract-level false result.
+   *
+   * The legacy checkWhitelist() boolean API is intentionally unchanged.
+   */
+  public async observeWhitelist(address: string): Promise<WhitelistObservation> {
+    const observedAt = new Date().toISOString();
+    const contract = new Contract(this.client.contractId);
+    const call = contract.call(
+      'is_whitelisted',
+      nativeToScVal(address, { type: 'address' })
+    );
+
+    try {
+      const result = await this.client.runNetworkOperation(() =>
+        this.client.rpcServer.simulateTransaction({
+          transaction: call as any,
+        } as any)
+      );
+
+      if (!rpc.Api.isSimulationSuccess(result) || !result.result) {
+        return {
+          address,
+          state: 'unknown',
+          isWhitelisted: null,
+          code: 'WHITELIST_STATUS_UNKNOWN',
+          observedAt,
+        };
+      }
+
+      const parsed = parseSorobanResult(result.result.retval as any);
+      if (parsed === true) {
+        return {
+          address,
+          state: 'approved',
+          isWhitelisted: true,
+          code: 'WHITELIST_APPROVED',
+          observedAt,
+        };
+      }
+      if (parsed === false) {
+        return {
+          address,
+          state: 'not_approved',
+          isWhitelisted: false,
+          code: 'WHITELIST_NOT_APPROVED',
+          observedAt,
+        };
+      }
+
+      return {
+        address,
+        state: 'unknown',
+        isWhitelisted: null,
+        code: 'WHITELIST_STATUS_UNKNOWN',
+        observedAt,
+      };
+    } catch {
+      return {
+        address,
+        state: 'unavailable',
+        isWhitelisted: null,
+        code: 'WHITELIST_QUERY_FAILED',
+        observedAt,
+      };
+    }
   }
 }

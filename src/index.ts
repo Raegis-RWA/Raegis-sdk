@@ -43,6 +43,7 @@ export {
 export { resolveClientConfig } from './config/validate';
 export { AEGIS_ENVIRONMENTS, getEnvironmentPreset } from './config/environments';
 export * from './types/portfolio';
+export * from './types/transfer-eligibility';
 export * from './errors/portfolio';
 export * from './types/role';
 export * from './errors/role';
