@@ -27,48 +27,88 @@ Either `environment` or both `rpcUrl` and `networkPassphrase` must be provided. 
 
 ## `ComplianceModule`
 
-Whitelist / KYC verification module. Accessed via `client.compliance`. Wraps the contract's `is_whitelisted` read-only function.
+Whitelist/compliance lifecycle module. Accessed via `client.compliance`. The
+current verified contract read method is `is_whitelisted`. This SDK build does
+not expose a verified whitelist-write contract method, so admin mutation is
+explicitly gated instead of guessing an ABI entrypoint.
+
+See [Compliance Lifecycle Client](./compliance-lifecycle.md) for usage and
+security/compliance boundaries.
 
 ### `checkWhitelist(address: string): Promise<boolean>`
 
-Queries the contract to check if a user is KYC-approved (whitelisted).
+Compatibility boolean query. Returns `true` only when the contract simulation
+produces a confirmed boolean true. A confirmed false or unusable simulation
+returns false.
 
-**Signature**
-```typescript
-public async checkWhitelist(address: string): Promise<boolean>
-```
+The address is validated as a Stellar Ed25519 account before RPC work.
+Invalid input throws `ComplianceLifecycleError` with
+`code: "INVALID_ADDRESS"`. Thrown RPC failures pass through the client's typed
+network-failure boundary.
 
-**Parameters**
-* `address` (string): The Stellar public key (`G...`) to check.
+Prefer `getComplianceStatus()` when an application must distinguish a confirmed
+negative result from an unavailable read.
 
-**Returns**
-`Promise<boolean>` — `true` if the simulated call to `is_whitelisted` succeeds and decodes to `true`. Resolves to `false` both when the contract reports the address is not whitelisted, *and* when the simulation does not succeed or returns no result — the current implementation does not distinguish those two cases in its return value.
+### `getComplianceStatus(address: string): Promise<ComplianceStatusSnapshot>`
 
-**Errors**
-* If `simulateTransaction` itself throws (network failure, malformed request, etc.), the error is logged via `console.error` and then re-thrown as-is. It is the raw error from the underlying `@stellar/stellar-sdk` RPC call — `checkWhitelist` does not wrap it in `PortfolioError` or any other typed error.
-* A failed/unsuccessful simulation that does *not* throw is swallowed and reported as `false` (see Returns above), not as an error.
+Returns one of three conservative protocol states:
 
-**Example**
-```typescript
-import { AegisClient } from '@aegis/sdk';
-import { Networks } from '@stellar/stellar-sdk';
+| Status | Code | Meaning |
+| --- | --- | --- |
+| `approved` | `WHITELIST_APPROVED` | Contract returned true. |
+| `not-approved` | `WHITELIST_NOT_APPROVED` | Contract returned false. |
+| `unavailable` | `READ_UNAVAILABLE` | No reliable boolean was observed or the read failed. |
 
-const client = new AegisClient({
-  rpcUrl: 'https://soroban-testnet.stellar.org',
-  networkPassphrase: Networks.TESTNET,
-  contractId: 'C...', // Aegis Protocol Contract ID
-});
+`eligible` is true/false only for confirmed contract booleans and null when the
+read is unavailable. Provider error details are not copied into the returned
+snapshot.
 
-try {
-  const isWhitelisted = await client.compliance.checkWhitelist('G_USER_PUBLIC_KEY');
-  console.log('Is User Whitelisted?', isWhitelisted);
-} catch (error) {
-  // Raised on RPC/network failure during simulation — not a PortfolioError.
-  console.error('Whitelist check failed:', error);
+### `diagnoseLifecycle(): ComplianceLifecycleDiagnostic`
+
+Returns a serializable capability snapshot describing the verified read method,
+whether a signer is configured, and the admin-write capability state. The
+current admin state is:
+
+```ts
+{
+  supported: false,
+  requiresSigner: true,
+  reasonCode: 'CONTRACT_WRITE_METHOD_UNAVAILABLE'
 }
 ```
 
-> **Open note:** `checkWhitelist` passes the raw invocation object returned by `contract.call(...)` directly as the `transaction` field to `simulateTransaction` (cast through `as any`), rather than assembling a full `Transaction` via `TransactionBuilder` the way `AssetModule.mint`/`transfer` do. The source itself flags this with a comment ("Cast required depending on SDK version wrapper"), so the exact request shape expected by `simulateTransaction` across `@stellar/stellar-sdk` versions is not fully confirmed — verify against the installed SDK version rather than assuming it's stable.
+The diagnostic reports `legalStatus: "not-assessed"` and never includes signer
+key material.
+
+### `updateWhitelist(address: string, approved: boolean): Promise<never>`
+
+Explicitly gated mutation path. The method validates the address and then:
+
+1. throws `SIGNER_REQUIRED` when no signer is configured;
+2. with a signer present, throws `ADMIN_UPDATE_UNSUPPORTED` because this SDK
+   source does not have a verified whitelist-write contract method.
+
+This ordering preserves the signer boundary for mutating flows without
+fabricating a Soroban call. Once a contract write ABI is verified, this method
+can be implemented behind the same typed surface.
+
+Role-aware callers may also use
+`createComplianceOperatorClient(...).assertWhitelistAccess()` or
+`createAdminClient(...).assertWhitelistAccess()` before entering an admin flow.
+Those are SDK-level capability guardrails, not on-chain authorization.
+
+### `ComplianceLifecycleError`
+
+Typed error codes:
+
+- `INVALID_ADDRESS` — invalid Stellar account address;
+- `SIGNER_REQUIRED` — mutation attempted without signer capability;
+- `ADMIN_UPDATE_UNSUPPORTED` — no verified contract whitelist-write method is
+  available in this SDK build.
+
+> Compliance state is protocol data, not legal advice or proof of KYC/AML
+> completion. Contract authorization remains authoritative for protocol actions.
+
 
 ---
 
