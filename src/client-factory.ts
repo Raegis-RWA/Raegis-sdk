@@ -104,7 +104,7 @@ export interface AegisReadOnlyClient {
   /** The underlying `AegisClient` instance. */
   readonly client: AegisClient;
   /** Compliance query module (read-only: checkWhitelist). */
-  readonly compliance: ComplianceModule;
+  readonly compliance: Pick<ComplianceModule, 'checkWhitelist'>;
   /** Investor portfolio read module. */
   readonly investor: InvestorModule;
   /** Contract event decoder/fetcher module. */
@@ -127,6 +127,11 @@ export interface AegisInvestorClient extends AegisReadOnlyClient {
  * Available for: `compliance-operator`, `admin`.
  */
 export interface AegisComplianceOperatorClient extends AegisInvestorClient {
+  /** Compliance reads plus guarded atomic batch lifecycle writes. */
+  readonly compliance: Pick<
+    ComplianceModule,
+    'checkWhitelist' | 'batchSetComplianceStatus' | 'batchWhitelist' | 'batchRevoke'
+  >;
   /**
    * Asserts that the configured keypair may be used to manage the whitelist.
    * Throws `RoleCapabilityError` if the role does not include `canManageWhitelist`.
@@ -151,6 +156,8 @@ export interface AegisIssuerClient extends AegisInvestorClient {
  * (for whitelist management) via a merged interface.
  */
 export interface AegisAdminClient extends AegisIssuerClient {
+  /** Compliance module — full read/write access. */
+  readonly compliance: ComplianceModule;
   /** Asset module — full access. */
   readonly asset: AssetModule;
   /**
@@ -173,7 +180,7 @@ class RoleAwareClient implements AegisReadOnlyClient {
   public readonly role: ClientRole;
   public readonly capabilities: RoleCapabilities;
   public readonly client: AegisClient;
-  public readonly compliance: ComplianceModule;
+  public readonly compliance: Pick<ComplianceModule, 'checkWhitelist'>;
   public readonly investor: InvestorModule;
   public readonly events: EventsModule;
   public readonly role_module: RoleModule;
@@ -182,7 +189,9 @@ class RoleAwareClient implements AegisReadOnlyClient {
     this.role = role;
     this.capabilities = ROLE_CAPABILITIES[role];
     this.client = client;
-    this.compliance = client.compliance;
+    this.compliance = {
+      checkWhitelist: (...args) => client.compliance.checkWhitelist(...args),
+    };
     this.investor = client.investor;
     this.events = client.events;
     this.role_module = client.role;
@@ -286,6 +295,25 @@ export function createComplianceOperatorClient(
 
   return {
     ...base,
+    compliance: {
+      checkWhitelist: (...args) => client.compliance.checkWhitelist(...args),
+      batchSetComplianceStatus: (...args) => {
+        assertCapability(
+          capabilities,
+          'canManageWhitelist',
+          'batch compliance status',
+        );
+        return client.compliance.batchSetComplianceStatus(...args);
+      },
+      batchWhitelist: (...args) => {
+        assertCapability(capabilities, 'canManageWhitelist', 'batch whitelist');
+        return client.compliance.batchWhitelist(...args);
+      },
+      batchRevoke: (...args) => {
+        assertCapability(capabilities, 'canManageWhitelist', 'batch revocation');
+        return client.compliance.batchRevoke(...args);
+      },
+    },
     asset: {
       transfer: (...args) => {
         assertCapability(capabilities, 'canTransfer', 'transfer');
@@ -361,6 +389,7 @@ export function createAdminClient(config: SignerClientConfig): AegisAdminClient 
 
   return {
     ...base,
+    compliance: client.compliance,
     asset: client.asset,
     assertAdminAccess(): void {
       assertCapability(capabilities, 'canAdminister', 'admin operation');

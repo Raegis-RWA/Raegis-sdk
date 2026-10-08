@@ -61,6 +61,26 @@ See [Role-Aware Client Factory](./docs/role-aware-client-factory.md) for the
 full capability matrix, `compliance-operator` usage, error handling, and
 security notes.
 
+## Batch Compliance Operations
+
+Compliance-operator and admin role clients can submit atomic whitelist,
+revocation, or mixed lifecycle batches through the contract's native
+`batch_set_compliance_status` entrypoint. The SDK prepares the single Soroban
+invocation before signing and submission; the contract remains authoritative
+for lifecycle and authorization checks.
+
+`batchRevoke()` uses the strict lifecycle transition to `Revoked`, so a
+batch is rejected rather than partially applied when any row is invalid.
+Duplicate addresses and invalid target states are rejected before RPC work.
+
+Do not place KYC documents, sanctions evidence, legal notes, or other personal
+data on-chain. The batch payload should contain only addresses and resulting
+protocol status values. Protocol status is not legal or financial advice.
+
+See [Batch Compliance Operations](./docs/batch-compliance.md) for the role
+boundary, mixed-status API, atomicity guarantees, failure semantics, and
+security guidance.
+
 For direct `AegisClient` construction (advanced / custom setups):
 
 ```typescript

@@ -125,6 +125,11 @@ describe('createReadOnlyClient', () => {
     expect((aegis as any).asset).toBeUndefined();
   });
 
+  it('does not expose compliance batch writes', () => {
+    const aegis = createReadOnlyClient(BASE_CONFIG);
+    expect((aegis.compliance as any).batchSetComplianceStatus).toBeUndefined();
+  });
+
   it('underlying client throws when requireSigner is called (no keypair)', () => {
     const aegis = createReadOnlyClient(BASE_CONFIG);
     expect(() => aegis.client.requireSigner()).toThrow(
@@ -207,6 +212,16 @@ describe('createComplianceOperatorClient', () => {
     expect((aegis.asset as any).mint).toBeUndefined();
   });
 
+  it('exposes compliance batch writes', () => {
+    const aegis = createComplianceOperatorClient({
+      ...BASE_CONFIG,
+      keypair: makeKeypair(),
+    });
+    expect(typeof aegis.compliance.batchSetComplianceStatus).toBe('function');
+    expect(typeof aegis.compliance.batchWhitelist).toBe('function');
+    expect(typeof aegis.compliance.batchRevoke).toBe('function');
+  });
+
   it('assertWhitelistAccess does not throw for compliance-operator', () => {
     const aegis = createComplianceOperatorClient({
       ...BASE_CONFIG,
@@ -240,10 +255,11 @@ describe('createIssuerClient', () => {
     expect(typeof aegis.asset.transfer).toBe('function');
   });
 
-  it('does not expose assertWhitelistAccess or assertAdminAccess', () => {
+  it('does not expose privileged or compliance-batch operations', () => {
     const aegis = createIssuerClient({ ...BASE_CONFIG, keypair: makeKeypair() });
     expect((aegis as any).assertWhitelistAccess).toBeUndefined();
     expect((aegis as any).assertAdminAccess).toBeUndefined();
+    expect((aegis.compliance as any).batchWhitelist).toBeUndefined();
   });
 });
 
@@ -267,6 +283,13 @@ describe('createAdminClient', () => {
     const aegis = createAdminClient({ ...BASE_CONFIG, keypair: makeKeypair() });
     expect(typeof aegis.asset.mint).toBe('function');
     expect(typeof aegis.asset.transfer).toBe('function');
+  });
+
+  it('exposes compliance batch writes', () => {
+    const aegis = createAdminClient({ ...BASE_CONFIG, keypair: makeKeypair() });
+    expect(typeof aegis.compliance.batchSetComplianceStatus).toBe('function');
+    expect(typeof aegis.compliance.batchWhitelist).toBe('function');
+    expect(typeof aegis.compliance.batchRevoke).toBe('function');
   });
 
   it('assertAdminAccess does not throw for admin', () => {
