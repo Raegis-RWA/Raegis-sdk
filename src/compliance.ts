@@ -1,12 +1,28 @@
 import { Contract, nativeToScVal, rpc } from '@stellar/stellar-sdk';
 import { AegisClient } from './client';
 import { parseSorobanResult } from './utils/xdr-parser';
+import {
+  buildComplianceAuditReport,
+  ComplianceAuditInput,
+  ComplianceAuditReport,
+} from './compliance-audit';
 
 export class ComplianceModule {
 private client: AegisClient;
 
 constructor(client: AegisClient) {
     this.client = client;
+  }
+
+  /**
+   * Builds a deterministic compliance audit report from caller-supplied evidence.
+   *
+   * This helper performs no RPC calls and does not make legal or financial
+   * compliance determinations; it only normalizes and summarizes the supplied
+   * protocol evidence.
+   */
+  public buildAuditReport(input: ComplianceAuditInput): ComplianceAuditReport {
+    return buildComplianceAuditReport(input);
   }
 
   /**

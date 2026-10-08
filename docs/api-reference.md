@@ -29,6 +29,20 @@ Either `environment` or both `rpcUrl` and `networkPassphrase` must be provided. 
 
 Whitelist / KYC verification module. Accessed via `client.compliance`. Wraps the contract's `is_whitelisted` read-only function.
 
+### `buildAuditReport(input: ComplianceAuditInput): ComplianceAuditReport`
+
+Builds a deterministic schema-v1 report from caller-supplied evidence and check
+statuses. This method is pure: it performs no RPC calls and delegates to the
+standalone `buildComplianceAuditReport()` export.
+
+Non-`unknown` findings require at least one known evidence id. Invalid or
+ambiguous input throws `ComplianceAuditInputError` with a stable error code.
+Overall status precedence is `fail > unknown > warn > pass`.
+
+See [Compliance Audit Report Builder](./compliance-audit-report.md) for the data
+model, validation table, deterministic ordering, examples, and the
+security/compliance boundary. The report is not legal or financial advice.
+
 ### `checkWhitelist(address: string): Promise<boolean>`
 
 Queries the contract to check if a user is KYC-approved (whitelisted).

@@ -73,6 +73,17 @@ const aegis = new AegisClient({
 });
 ```
 
+## Compliance Audit Reports
+
+Build deterministic, typed summaries from caller-supplied protocol evidence with
+`client.compliance.buildAuditReport(...)` or the standalone
+`buildComplianceAuditReport(...)` export. The builder performs no network I/O
+and does not make legal or financial compliance determinations.
+
+See [Compliance Audit Report Builder](./docs/compliance-audit-report.md) for the
+data model, stable validation errors, evidence requirements, ordering rules, and
+security/compliance boundary.
+
 ## Role Discovery & Capability Checks
 Check what an address is classified as, and what it can currently attempt through the SDK.
 This is a client-side convenience for UI gating, not on-chain authorization — see the
