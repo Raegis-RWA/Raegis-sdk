@@ -150,3 +150,6 @@ PRs submitted to this repository are reviewed against our [Pull Request Reviewer
 ### Acceptance Criteria Traceability
 Every PR **must** include an [acceptance criteria traceability table](docs/acceptance-criteria-traceability.md) that maps SDK modules, tests, docs, and behaviour verification to each acceptance criterion from the linked issue. This makes evaluation straightforward for maintainers and GrantFox reviewers.
 
+### Issue Approval Readiness
+Before considering an issue complete and ready for evaluation or payment review, use the [Issue Approval Readiness Checklist](docs/approval-readiness-checklist.md). This checklist covers implementation completeness, testing expectations, CI status, acceptance criteria review, documentation, and known limitations. Note that **a merged PR is still subject to evaluation** — merge does not automatically confirm reward eligibility or campaign completion.
+
